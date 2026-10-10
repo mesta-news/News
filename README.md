@@ -52,11 +52,20 @@ official pages it watches for changes.
    public news; your `profile` text is never published. It is, however,
    readable in `config.yaml` in a public repo, so keep it general or use a
    paid plan with a private repo.
-3. **Add the Claude API key** (optional, but this is what turns a list of links
-   into a briefing): create a key at <https://console.anthropic.com>, then
-   *Settings → Secrets and variables → Actions → New repository secret*
-   → name `ANTHROPIC_API_KEY`.
-   Without it the digest still works, with headlines and snippets only.
+3. **Connect Claude** (optional, but this is what turns a list of links into
+   a briefing). Two options:
+   * **Your Claude Pro/Max subscription (no extra cost):** install Claude Code
+     on your computer (<https://claude.ai/download> or
+     `npm install -g @anthropic-ai/claude-code`), run `claude setup-token` in a
+     terminal, log in, and copy the token it prints (`sk-ant-oat…`). Then
+     *Settings → Secrets and variables → Actions → New repository secret*
+     → name `CLAUDE_CODE_OAUTH_TOKEN`. It counts toward your plan's usage
+     limits (a small daily amount). The token gives access to your Claude
+     account, so keep it only in GitHub Secrets.
+   * **Pay-as-you-go API:** create a key at <https://console.anthropic.com>
+     and save it as the secret `ANTHROPIC_API_KEY` (see *Cost* below).
+
+   Without either, the digest still works, with headlines and snippets only.
 4. **Run it:** *Actions → Daily digest → Run workflow*. After 2–3 minutes the
    site is live at `https://<your-username>.github.io/<repo-name>/`.
    Add it to both phones' home screens (Share → *Add to Home Screen*).
@@ -85,14 +94,15 @@ Changes to `config.yaml` on `main` trigger a fresh digest automatically.
 
 ```bash
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=...        # optional
+export CLAUDE_CODE_OAUTH_TOKEN=...  # optional (or ANTHROPIC_API_KEY=...)
 python -m news_digest               # writes _site/index.html
 python -m news_digest --no-ai       # skip Claude
 ```
 
 ## Cost
 
-GitHub Actions and Pages are free for this. The Claude API is billed
+GitHub Actions and Pages are free for this. With `CLAUDE_CODE_OAUTH_TOKEN`
+the summaries run on your Claude subscription at no extra cost. The Claude API is billed
 separately from a Claude.ai subscription (prepaid credits at
 console.anthropic.com). Rough cost of the daily digest (about six small
 requests with headlines only), set with `model:` in `config.yaml`:
