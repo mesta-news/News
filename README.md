@@ -30,6 +30,7 @@ also have it emailed to you.
 * Some briefings end with an **Explainer**, a short background note on the one development that needs context.
 * Claude sees each tab's previous briefing, so it flags follow-ups and reversals instead of repeating yesterday.
 * **This week** (Saturday and Sunday editions): a week in review per tab, written from the week's saved briefings.
+* **Reader**: tap any story to read it in the app: its picture, a short summary Claude wrote from the article, why it matters, then **Read the full article at the source**. Each morning the run opens the top stories of every tab (resolving Google News links to the publisher) so Claude can summarise them; only the summary and the picture link are stored, never the article text.
 * **Search** (magnifier): stories and briefings from the last 90 days (`search.json`, built with the site).
 * **Saved** (bookmark): tap ☆ on any story to keep it; saved stories stay on that phone.
 * **For you**: the stories you open teach the app which topics and sources you like; up to two matching stories per tab move to the top. Stored on each phone only; reset in the footer.

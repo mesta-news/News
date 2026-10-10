@@ -206,6 +206,36 @@
   .notify .modes label.choice { align-items: flex-start; font-size: .86rem; }
   .notify .modes input { margin-top: 2px; flex: none; }
 
+  /* Whole stories are tappable and open the in-app reader */
+  li[data-id] { cursor: pointer; }
+  li[data-id]:active { background: var(--panel); }
+  dialog.reader { width: 100%; max-width: 760px; height: 100%; max-height: 100%; margin: 0 auto; padding: 0; border: 0;
+                  background: var(--paper); color: var(--ink); overscroll-behavior: contain; }
+  dialog.reader::backdrop { background: rgba(0,0,0,.55); }
+  @media (min-width: 800px) { dialog.reader { height: calc(100% - 48px); margin-top: 24px; border-radius: 14px; } }
+  .reader-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center;
+                padding: calc(6px + var(--safe-top)) 10px 6px; background: var(--paper); border-bottom: 1px solid var(--rule); }
+  .reader-actions { display: flex; gap: 4px; }
+  .reader-btn { min-width: 44px; height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: none;
+                color: var(--ink); font: 600 .95rem var(--sans); cursor: pointer; }
+  .reader-btn:active { background: var(--panel); }
+  .r-star { font-size: 1.25rem; color: var(--faint); }
+  .r-star::before { content: "☆"; }
+  .r-star[aria-pressed="true"] { color: var(--claret); }
+  .r-star[aria-pressed="true"]::before { content: "★"; }
+  .reader-body { padding: 18px 18px calc(32px + var(--safe-bottom)); }
+  .reader-body h2 { margin: 8px 0 8px; font: 600 clamp(1.5rem, 6vw, 2rem)/1.18 var(--serif); letter-spacing: -.01em; }
+  #r-sec { color: var(--cat, var(--teal)); }
+  #r-img { display: block; width: 100%; max-height: 300px; object-fit: cover; margin: 16px 0 4px; border-radius: 6px; background: var(--panel); }
+  .r-block { margin: 18px 0 0; }
+  .r-block p, .reader-body .foryou p { margin: 6px 0 0; font: 400 1.08rem/1.55 var(--serif); }
+  .r-block p.meta { font: 400 .74rem var(--sans); color: var(--muted); }
+  .source-btn { display: block; margin: 22px 0 0; padding: 14px 16px; border-radius: 10px; background: var(--claret); color: var(--paper);
+                font: 700 .95rem/1.3 var(--sans); text-align: center; text-decoration: none; }
+  .next-btn { display: block; width: 100%; margin: 10px 0 0; padding: 13px 16px; border: 1px solid var(--rule); border-radius: 10px;
+              background: var(--card); color: var(--ink); font: 600 .9rem/1.35 var(--sans); text-align: left; cursor: pointer; }
+  .next-btn span { display: block; font: 600 1rem/1.3 var(--serif); margin-top: 2px; }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
              padding: 10px 0; border-bottom: 1px solid var(--rule); }
@@ -354,12 +384,12 @@
         <a class="card-title" href="#{{ s.id }}" data-tab="{{ s.id }}">{{ lead.head }}</a>
         {% if lead.body %}<p class="standfirst">{{ lead.body }}</p>{% endif %}
         {% elif fresh %}
-        <a class="card-title" href="{{ fresh[0].link }}" target="_blank" rel="noopener">{{ fresh[0].title }}</a>
+        <a class="card-title" href="{{ fresh[0].link }}" data-article="{{ fresh[0].id }}" target="_blank" rel="noopener">{{ fresh[0].title }}</a>
         {% else %}
         <p class="empty">Nothing new today.</p>
         {% endif %}
         {% if fresh %}
-        <ul>{% for i in fresh[(0 if lead and lead.head else 1):][:2] %}<li><a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a></li>{% endfor %}</ul>
+        <ul>{% for i in fresh[(0 if lead and lead.head else 1):][:2] %}<li><a href="{{ i.link }}" data-article="{{ i.id }}" target="_blank" rel="noopener">{{ i.title }}</a></li>{% endfor %}</ul>
         {% endif %}
         <a class="more" href="#{{ s.id }}" data-tab="{{ s.id }}">Open {{ s.short or s.title }} →</a>
       </div>
@@ -525,7 +555,7 @@
     <details><summary>Already in earlier editions ({{ old_items | length }})</summary>
       <ul class="stories older">
         {% for i in old_items[:30] %}
-        <li><div class="src">{{ i.sources[0] }}</div><a class="hl" href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
+        <li data-id="{{ i.id }}" data-sec="{{ s.id }}" data-date="{{ i.published[:10] }}"><div class="src">{{ i.sources[0] }}</div><a class="hl" href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
           <div class="meta">{{ i.published | shortdate }}</div></li>
         {% endfor %}
       </ul>
@@ -588,6 +618,29 @@
   </div>
   <p class="meta" style="margin-top:12px"><a href="#" id="settings-reset">Reset all settings</a></p>
 </dialog>
+
+<dialog class="reader" id="reader" aria-labelledby="r-title">
+  <div class="reader-bar">
+    <button class="reader-btn" type="button" id="r-back" aria-label="Back to the list">‹ Back</button>
+    <div class="reader-actions">
+      <button class="reader-btn r-star" type="button" id="r-star" aria-pressed="false" aria-label="Save for later"></button>
+      <button class="reader-btn" type="button" id="r-share">Share</button>
+    </div>
+  </div>
+  <div class="reader-body">
+    <div class="kicker" id="r-sec"></div>
+    <h2 id="r-title"></h2>
+    <div class="meta" id="r-meta"></div>
+    <img id="r-img" alt="" hidden referrerpolicy="no-referrer">
+    <section class="r-block" id="r-sum-box"><div class="kicker">Summary</div><p id="r-sum"></p>
+      <p class="meta">Written by Claude from the article. Check the source for details.</p></section>
+    <section class="foryou" id="r-note-box"><div class="kicker">Why it matters</div><p id="r-note"></p></section>
+    <section class="r-block" id="r-snip-box"><div class="kicker">From the feed</div><p id="r-snip"></p></section>
+    <a class="source-btn" id="r-link" target="_blank" rel="noopener"></a>
+    <button class="next-btn" type="button" id="r-next"></button>
+  </div>
+</dialog>
+<script type="application/json" id="articles">{{ articles | tojson }}</script>
 
 <dialog class="chart-dlg" id="chart-dlg" aria-labelledby="chart-title">
   <div class="chart-head"><div><div class="kicker" id="chart-sub"></div><h3 id="chart-title"></h3></div>

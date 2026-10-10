@@ -40,17 +40,23 @@
       </li>`).join("");
   }
 
+  const isSaved = id => saved.some(s => s.id === id);
+  function toggleSave(data) {
+    saved = isSaved(data.id) ? saved.filter(s => s.id !== data.id) : [data, ...saved].slice(0, 200);
+    store("brief-saved", saved);
+    syncStars();
+  }
+
   document.addEventListener("click", e => {
     const star = e.target.closest("li[data-id] > .star");
     if (!star) return;
     e.preventDefault();
-    const li = star.parentElement, id = li.dataset.id;
-    saved = saved.some(s => s.id === id) ? saved.filter(s => s.id !== id) : [storyData(li), ...saved].slice(0, 200);
-    store("brief-saved", saved);
-    syncStars();
+    e.stopPropagation();
+    const li = star.parentElement;
+    toggleSave(storyData(li));
     if (!li.closest("#saved-list")) renderSaved();
     else li.remove(), ($("saved-empty").hidden = saved.length > 0);
-  });
+  }, true);
 
   // ------------------------------------------------------------------ reading preferences
   // Words and sources of the stories opened on this phone gain weight (fading ~3% a day);
@@ -67,17 +73,13 @@
   }
   prefs.day = today;
 
-  document.addEventListener("click", e => {
-    const a = e.target.closest("li[data-id] a.hl");
-    if (!a) return;
-    const li = a.closest("li");
-    words(a.textContent).forEach(w => prefs.w[w] = Math.min((prefs.w[w] || 0) + 1, 20));
-    const src = (li.querySelector(".src")?.firstChild?.textContent || "").trim().replace(/ \+\d+$/, "");
+  function learn(title, src) {
+    words(title).forEach(w => prefs.w[w] = Math.min((prefs.w[w] || 0) + 1, 20));
     if (src) prefs.s[src] = Math.min((prefs.s[src] || 0) + 1, 20);
     const keys = Object.keys(prefs.w);
     if (keys.length > 600) keys.sort((x, y) => prefs.w[x] - prefs.w[y]).slice(0, keys.length - 600).forEach(k => delete prefs.w[k]);
     store("brief-interest", prefs);
-  }, true);
+  }
 
   function rank() {
     if (!Object.keys(prefs.w).length || load("brief-settings", {}).foryou === false) return;
@@ -237,6 +239,94 @@
   $("chart-close")?.addEventListener("click", () => dlg.close());
   dlg?.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
   addEventListener("resize", () => { if (dlg?.open && current) draw(current); });
+
+  // ------------------------------------------------------------------ in-app reader
+  // Tapping a story (anywhere but its star) opens it here: picture, Claude's summary
+  // of the article, why it matters, then a button to the full article at the source.
+  const ART = JSON.parse($("articles")?.textContent || "{}");
+  const reader = $("reader");
+  let readingList = [], readingAt = -1, readerState = false;
+
+  function articleFor(id) {
+    if (ART[id]) return { id, ...ART[id] };
+    const s = saved.find(x => x.id === id);  // saved from an older edition
+    return s ? { id, t: s.title, l: s.link, s: s.src, d: s.date, sec: s.sec } : null;
+  }
+
+  function host(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
+
+  function openReader(id, list) {
+    const a = articleFor(id);
+    if (!a || !reader) return false;
+    readingList = list || [id];
+    readingAt = readingList.indexOf(id);
+    reader.dataset.cat = a.sec || "";
+    $("r-sec").textContent = a.sec ? label(a.sec) : "";
+    $("r-title").textContent = a.t;
+    $("r-meta").textContent = [a.s + (a.n > 1 ? ` and ${a.n - 1} more` : ""), shortDate(a.d)].filter(Boolean).join(" · ");
+    const img = $("r-img");
+    img.hidden = true;
+    img.onload = () => { img.hidden = false; };
+    img.onerror = () => { img.hidden = true; };
+    if (a.img) img.src = a.img; else img.removeAttribute("src");
+    $("r-sum").textContent = a.sum || "";
+    $("r-sum-box").hidden = !a.sum;
+    $("r-note").textContent = a.note || "";
+    $("r-note-box").hidden = !a.note;
+    $("r-snip").textContent = a.snip || "";
+    $("r-snip-box").hidden = !a.snip || !!a.sum;
+    const src = host(a.l) && !host(a.l).endsWith("news.google.com") ? host(a.l) : a.s;
+    $("r-link").href = a.l;
+    $("r-link").textContent = `Read the full article${src ? " at " + src : ""} ↗`;
+    $("r-star").setAttribute("aria-pressed", isSaved(id));
+    const nextId = readingList[readingAt + 1], next = nextId && articleFor(nextId);
+    $("r-next").hidden = !next;
+    if (next) $("r-next").innerHTML = `Next story<span>${esc(next.t)}</span>`;
+    if (!reader.open) {
+      reader.showModal();
+      if (!readerState) { history.pushState({ reader: true }, "", location.href); readerState = true; }
+    }
+    reader.scrollTop = 0;
+    learn(a.t, a.s);
+    return true;
+  }
+
+  function closeReader(fromHistory) {
+    if (!reader?.open) return;
+    reader.close();
+    if (readerState && !fromHistory) { readerState = false; history.back(); }
+    readerState = false;
+  }
+
+  document.addEventListener("click", e => {
+    if (e.defaultPrevented || e.target.closest("dialog, .star")) return;
+    const link = e.target.closest("a[data-article]");
+    const li = !link && e.target.closest("li[data-id]");
+    const id = link ? link.dataset.article : li && li.dataset.id;
+    if (!id) return;
+    const list = li ? [...li.parentElement.querySelectorAll(":scope > li[data-id]")].map(x => x.dataset.id) : [id];
+    if (openReader(id, list)) e.preventDefault();
+  });
+
+  $("r-back")?.addEventListener("click", () => closeReader());
+  reader?.addEventListener("cancel", e => { e.preventDefault(); closeReader(); });
+  addEventListener("popstate", () => closeReader(true));
+  $("r-next")?.addEventListener("click", () => openReader(readingList[readingAt + 1], readingList));
+  $("r-star")?.addEventListener("click", () => {
+    const a = articleFor(readingList[readingAt]);
+    if (!a) return;
+    toggleSave({ id: a.id, title: a.t, link: a.l, sec: a.sec, src: a.s, date: a.d, at: Date.now() });
+    $("r-star").setAttribute("aria-pressed", isSaved(a.id));
+    renderSaved();
+  });
+  $("r-share")?.addEventListener("click", async () => {
+    const a = articleFor(readingList[readingAt]);
+    if (!a) return;
+    try {
+      if (navigator.share) await navigator.share({ title: a.t, text: a.sum || a.t, url: a.l });
+      else { await navigator.clipboard.writeText(a.l); $("r-share").textContent = "Link copied"; setTimeout(() => $("r-share").textContent = "Share", 1500); }
+    } catch (err) {}
+  });
 
   // ------------------------------------------------------------------ settings
   // Theme and text size apply at once (and before drawing, see _head.html.j2);
