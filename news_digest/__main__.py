@@ -64,7 +64,19 @@ def _balance(items: list[dict], groups: list[str] | None) -> list[dict]:
     return out + rest
 
 
-def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
+def _previous_summaries(data_dir: Path | None, today: str) -> dict[str, str]:
+    """Each section's briefing from the last earlier edition, so Claude can follow up."""
+    if not data_dir:
+        return {}
+    for f in sorted(data_dir.glob("*.json"), reverse=True):
+        if f.stem < today:
+            d = load_json(f, {})
+            return {s["id"]: s["briefing"]["summary"] for s in d.get("sections", [])
+                    if (s.get("briefing") or {}).get("summary")}
+    return {}
+
+
+def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None) -> dict:
     now = datetime.now(timezone.utc)
     today = now.astimezone(TZ).date().isoformat()
 
@@ -114,6 +126,11 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
                 sec["errors"].append(err)
         sec["new_count"] = sum(1 for i in sec["items"] if i["is_new"])
 
+    previous = _previous_summaries(data_dir, today)
+    for sec in sections:
+        if sec["id"] in previous:
+            sec["previous_briefing"] = previous[sec["id"]]
+
     client = summarize._client() if use_ai else None
     top: list[str] = []
     if client:
@@ -133,6 +150,9 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
         top = summarize.top_briefing(client, cfg, sections)
     elif use_ai:
         log.info("No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY - skipping AI summaries")
+
+    for sec in sections:
+        sec.pop("previous_briefing", None)  # only an input for Claude; already in yesterday's file
 
     # Forget old "seen" ids so the state file stays small.
     keep_after = (now - timedelta(days=cfg.get("seen_retention_days", 60))).date().isoformat()
@@ -223,11 +243,48 @@ def _lead(summary: str | None) -> dict:
     return {"head": head.replace("**", "").strip(), "body": body.replace("**", "").strip()}
 
 
+MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+def _agenda(d: dict, limit: int = 12) -> list[dict]:
+    """All sections' 'On the radar' events in date order, for the front page."""
+    try:
+        edition = datetime.fromisoformat(d["date"]).date()
+    except (KeyError, ValueError):
+        return []
+    events = []
+    for s in d.get("sections", []):
+        for e in (s.get("briefing") or {}).get("on_radar") or []:
+            when, _, what = e.partition(": ")
+            m = (re.search(r"(\d{1,2})(?:\s*[-–]\s*\d{1,2})?\s+([A-Za-z]{3})", when)
+                 or re.search(r"([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})", when))
+            if not what or not m:
+                continue
+            day, mon = (m.group(1), m.group(2)) if m.group(1).isdigit() else (m.group(2), m.group(1))
+            if mon.lower() not in MONTHS:
+                continue
+            try:
+                date = edition.replace(month=MONTHS[mon.lower()], day=int(day))
+            except ValueError:
+                continue
+            if date < edition - timedelta(days=60):  # "5 Jan" in an October edition is next year
+                date = date.replace(year=date.year + 1)
+            if date < edition:
+                continue
+            clock = re.search(r"\b\d{1,2}:\d{2}\b", when)
+            events.append({"date": date, "time": clock.group(0) if clock else "", "what": what.strip(),
+                           "section": s["id"], "label": s.get("short") or s["title"]})
+    events.sort(key=lambda e: e["date"])
+    return events[:limit]
+
+
 def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
-                       bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval)
+                       bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
+                       agenda=_agenda)
     return env
 
 
@@ -287,7 +344,7 @@ def main() -> None:
     cfg = yaml.safe_load(args.config.read_text())
     digest = None
     if not args.render_only:
-        digest = build(cfg, args.state, use_ai=not args.no_ai)
+        digest = build(cfg, args.state, use_ai=not args.no_ai, data_dir=args.data)
         save_json(args.data / f"{digest['date']}.json", digest)
         log.info("digest %s: %d new articles", digest["date"],
                  sum(s["new_count"] for s in digest["sections"]))
