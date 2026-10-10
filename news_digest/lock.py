@@ -41,6 +41,15 @@ def lock_json(text: str, secret: str) -> str:
     return json.dumps({"locked": 1, **_seal(text.encode(), secret)})
 
 
+def unlock_json(text: str, secret: str) -> str:
+    """Inverse of lock_json (raises ValueError when the key is wrong)."""
+    box = json.loads(text)
+    try:
+        return AESGCM(_key(secret)).decrypt(base64.b64decode(box["iv"]), base64.b64decode(box["ct"]), None).decode()
+    except Exception as exc:
+        raise ValueError("cannot decrypt: wrong SITE_PASSPHRASE?") from exc
+
+
 def lock_html(html: str, secret: str) -> str:
     sealed = json.dumps(_seal(html.encode(), secret))
     return UNLOCK_PAGE.replace("__SEALED__", sealed).replace("__ITER__", str(ITERATIONS)).replace(

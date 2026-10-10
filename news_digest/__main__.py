@@ -37,16 +37,42 @@ log = logging.getLogger("news_digest")
 
 # --------------------------------------------------------------------------- state
 
+# With SITE_PASSPHRASE set, saved editions and state are stored encrypted, so the
+# public repo holds only ciphertext. Plain files from before still load.
+
 def load_json(path: Path, default):
     try:
-        return json.loads(path.read_text())
+        text = path.read_text()
+        data = json.loads(text)
     except (FileNotFoundError, json.JSONDecodeError):
         return default
+    if isinstance(data, dict) and data.get("locked") == 1 and set(data) == {"locked", "iv", "ct"}:
+        if not lock.passphrase():
+            raise SystemExit(f"{path} is encrypted: set SITE_PASSPHRASE to read it")
+        return json.loads(lock.unlock_json(text, lock.passphrase()))
+    return data
 
 
 def save_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True))
+    text = json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True)
+    secret = lock.passphrase()
+    path.write_text(lock.lock_json(text, secret) if secret else text)
+
+
+def encrypt_stored(*dirs: Path) -> None:
+    """Re-save plain JSON files encrypted (once, after SITE_PASSPHRASE is added)."""
+    if not lock.passphrase():
+        return
+    count = 0
+    for folder in dirs:
+        for f in folder.glob("*.json"):
+            raw = json.loads(f.read_text())
+            if not (isinstance(raw, dict) and raw.get("locked") == 1):
+                save_json(f, raw)
+                count += 1
+    if count:
+        log.info("encrypted %d stored file(s)", count)
 
 
 # --------------------------------------------------------------------------- build
@@ -506,6 +532,7 @@ def main() -> None:
     cfg = yaml.safe_load(args.config.read_text())
     digest = None
     if not args.render_only:
+        encrypt_stored(args.data, args.state)
         digest = build(cfg, args.state, use_ai=not args.no_ai, data_dir=args.data)
         save_json(args.data / f"{digest['date']}.json", digest)
         log.info("digest %s: %d new articles", digest["date"],
