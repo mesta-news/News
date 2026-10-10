@@ -4,12 +4,13 @@ A private daily news digest for the two of us. It covers:
 
 | Section | What it tracks |
 |---|---|
-| 🩺 Foreign doctors & BIG registration | News about the BIG-register, the foreign-diploma procedure (CIBG / CBGV), AKV-/BI-toets, language requirements, law changes and timelines. It also **watches the official BIG-register pages** and shows exactly what changed. |
-| 🏥 Dutch healthcare job market | Shortages, ANIOS/basisarts hiring, collective agreements (cao), training places |
+| 💼 Clinical research & pharma careers | Hiring, expansions and layoffs at CROs, pharma and biotech in the Netherlands (Utrecht, Leiden, Amsterdam), and demand for CRA, medical affairs, MSL, pharmacovigilance and medical-information roles |
+| 🔬 Clinical trials, regulation & medical affairs | EMA decisions, EU Clinical Trials Regulation / CTIS, ICH E6(R3) GCP, Dutch bodies (CCMO, CBG-MEB), drug safety, AI in clinical trials |
 | 🤖 AI – models, tools & techniques | Model releases and capabilities, developer tools and practical techniques (OpenAI, Google, Hugging Face, Simon Willison, Latent Space, Hacker News, Google News on Anthropic/Claude) |
 | 📈 Watchlist | Prices (1D/1W/1M/YTD and a 3-month sparkline) and headlines for Wolters Kluwer, ASML, Nvidia, Microsoft, Alphabet, Amazon, Meta, TSMC, the S&P 500, Nasdaq 100, AEX and EUR/USD |
 | 🏦 Interest rates & central banks | ECB, Fed and Bank of England announcements plus news on the BoJ, PBoC and SNB, and Dutch mortgage and savings rates. Tiles show the policy rates and bond yields (US 2y/10y, German Bund, Dutch DSL) with 1-month and 1-year changes, from FRED |
 | 🌍 Business & markets | A Reuters/Bloomberg-style morning picture (Reuters and Bloomberg via Google News, CNBC, BBC, MarketWatch, NOS Economie) |
+| 🩺 BIG register & diploma recognition | Material changes to the route for foreign-trained doctors (law, CIBG/CBGV procedure, AKV-/BI-toets). It also **watches the official BIG-register pages** and shows exactly what changed |
 
 Every morning a GitHub Action collects the news, asks Claude to write a short
 briefing per section ("what happened", "what it means for us", the best
@@ -84,6 +85,8 @@ official pages it watches for changes.
 Everything is in [`config.yaml`](config.yaml):
 
 * **`profile`**: who you are. Claude uses it to explain why something matters.
+  The repo is public, so keep names and contact details out of it, or put the
+  whole text in a repository secret named `DIGEST_PROFILE`, which overrides it.
   Fill in the TODOs, especially where the diploma is from (EU/EEA or not).
   That determines which BIG procedure applies.
 * **`sections`**: add or remove feeds and Google News queries. Queries support

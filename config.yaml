@@ -3,20 +3,30 @@
 # Edit this file to change what the digest tracks. No code changes needed.
 # ---------------------------------------------------------------------------
 
-# Who the digest is for. This text is ONLY sent to the AI summariser (it is
-# never shown on the published page). The more specific, the better the
-# "why this matters to you" notes become. Fill in the TODOs.
+# Who the digest is for. Sent ONLY to Claude, never shown on the page.
+# This repo is public, so keep it free of names and contact details. To keep it
+# private, put the text in a GitHub secret named DIGEST_PROFILE instead; the
+# secret takes precedence over this field.
 profile: |
-  We are a couple who recently moved to the Netherlands.
-  - My wife is a medical doctor trained outside the Netherlands.
-    TODO: country where her diploma was obtained (EU/EEA or non-EU?), her
-    specialty (if any), years of experience, and her Dutch language level.
-    She is looking for work in Dutch healthcare and needs to obtain BIG
-    registration as a doctor (arts). Relevant: the foreign-diploma procedure
-    (CIBG / Commissie Buitenlandse Gediplomeerden Volksgezondheid), exams such
-    as the AKV-toets, BI-toets and language requirements, timelines/waiting
-    times, costs, and jobs available before/after registration (e.g. ANIOS,
-    research, healthcare roles that do not require BIG registration).
+  We are a couple living in Utrecht, the Netherlands.
+  - My wife is a medical doctor (MD) with a non-EU diploma and EU work
+    authorization (EU family member). Experience: ~4 years of clinical work as
+    a general practitioner (internships, residency rotations, COVID follow-up
+    care), then 2 years in pharma as a medical trainer / scientific
+    communication specialist (built training from clinical trial publications,
+    80+ seminars, worked with brand, clinical affairs and sales). She is
+    ICH-GCP certified, is doing a course on design and interpretation of
+    clinical trials, and is building healthcare data skills (Excel, clinical
+    data validation). Languages: Arabic (native), English, French, German
+    (medical C1), Dutch (beginner, learning).
+  - She is NOT pursuing BIG registration for now. She is targeting
+    non-clinical roles in clinical research and life sciences in the
+    Netherlands: Clinical Research Associate / Clinical Trial Assistant,
+    clinical operations, medical affairs, medical information, medical science
+    liaison, pharmacovigilance / drug safety, medical training and
+    communication, clinical data. Employers of interest: CROs, pharma and
+    biotech (especially around Utrecht, Leiden and Amsterdam), and
+    organisations like the EMA in Amsterdam.
   - I build software with AI and want to sharpen my skills: new model
     capabilities, tools, APIs, techniques and practical patterns I can use.
   - We don't hold stocks yet; we follow a watchlist (Wolters Kluwer, AI
@@ -44,40 +54,34 @@ seen_retention_days: 60
 #   max_items:    max articles listed in the section
 # ---------------------------------------------------------------------------
 sections:
-  - id: big
-    title: "Foreign doctors & BIG registration"
-    short: "BIG registration"
-    max_age_days: 21
-    max_items: 15
-    google_news:
-      - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl }
-      - { q: '"buitenlandse artsen" OR "buitenlands gediplomeerde" OR "buitenlands diploma" zorg', lang: nl }
-      - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl }
-      - { q: 'artsen "buiten de EU" OR "van buiten Europa" erkenning diploma', lang: nl }
-      - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en }
-      - { q: 'site:medischcontact.nl "buitenlandse artsen"', lang: nl }
-      - { q: 'site:medischcontact.nl "BIG-register"', lang: nl }
-    # Only keep articles that mention one of these (case-insensitive).
-    keywords: [big-regist, big regist, "big-registratie", buitenland, foreign, diploma,
-               akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets]
-    watch_pages:
-      # Official sources. If a URL stops working the digest will say so -
-      # just update it here.
-      - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
-      - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
-
-  - id: jobs
-    title: "Dutch healthcare job market"
-    short: "Jobs"
+  - id: careers
+    title: "Clinical research & pharma careers"
+    short: "Careers"
     max_age_days: 7
     max_items: 15
     google_news:
-      - { q: 'arbeidsmarkt zorg OR "personeelstekort zorg" OR "tekort aan artsen"', lang: nl }
-      - { q: 'ANIOS OR "arts niet in opleiding" OR basisarts vacatures OR opleidingsplaatsen', lang: nl }
-      - { q: 'cao ziekenhuizen OR "cao umc" OR huisartsentekort', lang: nl }
-      - { q: 'site:medischcontact.nl arbeidsmarkt', lang: nl }
-      - { q: 'site:skipr.nl OR site:zorgvisie.nl arbeidsmarkt', lang: nl }
-      - { q: 'Netherlands healthcare staff shortage doctors jobs', lang: en }
+      # Hiring, expansions and layoffs at CROs, pharma and biotech in the Netherlands
+      - { q: 'Netherlands CRO OR pharma OR biotech hiring OR jobs OR expansion OR layoffs', lang: en }
+      - { q: 'IQVIA OR ICON OR Parexel OR Syneos OR Labcorp OR "Thermo Fisher PPD" OR Fortrea Netherlands', lang: en }
+      - { q: '"Julius Clinical" OR Genmab OR Merus OR "Utrecht Science Park"', lang: nl }
+      - { q: '"Leiden Bio Science Park" OR Janssen Leiden OR Astellas OR MSD Haarlem OR Organon', lang: nl }
+      - { q: 'farmaceutische industrie OR biotech vacatures OR banen OR ontslagen OR groei', lang: nl }
+      # Roles she is targeting
+      - { q: '"clinical research associate" OR "medical affairs" OR "medical science liaison" OR pharmacovigilance careers', lang: en }
+      - { q: 'Holland Bio OR "Health~Holland" OR "life sciences" Nederland arbeidsmarkt', lang: nl }
+
+  - id: research
+    title: "Clinical trials, regulation & medical affairs"
+    short: "Clinical research"
+    max_age_days: 7
+    max_items: 15
+    google_news:
+      - { q: 'EMA "European Medicines Agency" OR CHMP OR PRAC', lang: en }
+      - { q: '"ICH E6(R3)" OR "good clinical practice" OR "EU Clinical Trials Regulation" OR CTIS', lang: en }
+      - { q: 'CCMO OR "CBG-MEB" OR "College ter Beoordeling van Geneesmiddelen" OR METC klinisch onderzoek', lang: nl }
+      - { q: 'clinical trials Europe decentralised OR "real-world evidence" OR "AI in clinical trials"', lang: en }
+      - { q: 'pharmacovigilance OR "drug safety" OR "medical affairs" industry trends', lang: en }
+      - { q: 'klinisch onderzoek Nederland geneesmiddelen studie', lang: nl }
 
   - id: ai
     title: "AI - models, tools & techniques"
@@ -138,6 +142,29 @@ sections:
       - { q: 'site:reuters.com markets OR economy OR business', lang: en }
       - { q: 'site:bloomberg.com markets OR economy', lang: en }
       - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
+
+  - id: big
+    title: "BIG register & diploma recognition"
+    short: "BIG"
+    max_age_days: 21
+    max_items: 8
+    google_news:
+      - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl }
+      - { q: '"buitenlandse artsen" OR "buitenlands gediplomeerde" OR "buitenlands diploma" zorg', lang: nl }
+      - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl }
+      - { q: 'artsen "buiten de EU" OR "van buiten Europa" erkenning diploma', lang: nl }
+      - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en }
+      - { q: 'site:medischcontact.nl "buitenlandse artsen"', lang: nl }
+      - { q: 'site:medischcontact.nl "BIG-register"', lang: nl }
+    # Only keep articles that mention one of these (case-insensitive).
+    keywords: [big-regist, big regist, "big-registratie", buitenland, foreign, diploma,
+               akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets]
+    watch_pages:
+      # Official sources. If a URL stops working the digest will say so -
+      # just update it here.
+      - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
+      - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
+
 
 # ---------------------------------------------------------------------------
 # Key interest rates - series IDs from FRED (https://fred.stlouisfed.org).
