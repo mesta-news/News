@@ -31,7 +31,8 @@ def quotes(watchlist: list[dict], now: datetime) -> tuple[list[dict], str | None
 
     rows = []
     for w in watchlist:
-        row = {"symbol": w["symbol"], "name": w["name"], "price": None}
+        row = {"symbol": w["symbol"], "name": w["name"], "group": w.get("group", ""),
+               "unit": w.get("unit", ""), "price": None}
         try:
             closes = data[w["symbol"]]["Close"].dropna()
         except Exception:
