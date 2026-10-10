@@ -86,7 +86,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
     client = summarize._client() if use_ai else None
     top: list[str] = []
     if client:
-        with ThreadPoolExecutor(max_workers=5) as pool:
+        with ThreadPoolExecutor(max_workers=3) as pool:
             briefings = list(pool.map(
                 lambda s: summarize.section_briefing(client, cfg, s), sections))
         for sec, brief in zip(sections, briefings):
@@ -101,7 +101,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
             sec["items"].sort(key=lambda i: not i["note"])
         top = summarize.top_briefing(client, cfg, sections)
     elif use_ai:
-        log.info("ANTHROPIC_API_KEY not set - skipping AI summaries")
+        log.info("No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY - skipping AI summaries")
 
     # Forget old "seen" ids so the state file stays small.
     keep_after = (now - timedelta(days=cfg.get("seen_retention_days", 60))).date().isoformat()

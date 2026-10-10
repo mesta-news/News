@@ -1,10 +1,20 @@
-"""Optional AI briefings with Claude (runs only when ANTHROPIC_API_KEY is set)."""
+"""Optional AI briefings with Claude.
+
+Two ways to reach Claude, picked automatically:
+  * CLAUDE_CODE_OAUTH_TOKEN set -> Claude Code CLI (`claude -p`), which runs on
+    your Claude Pro/Max subscription (create the token with `claude setup-token`).
+  * ANTHROPIC_API_KEY set       -> Claude API, billed per token.
+With neither, the digest is built without summaries.
+"""
 
 from __future__ import annotations
 
 import json
 import logging
 import os
+import shutil
+import subprocess
+import tempfile
 
 log = logging.getLogger(__name__)
 
@@ -78,15 +88,62 @@ Rules:
 """
 
 
-def _client():
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return None
-    import anthropic
+CLI_TIMEOUT = 600
 
-    return anthropic.Anthropic()
+
+def _client():
+    """Return "cli", an Anthropic API client, or None when no credentials are set."""
+    if os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+        if shutil.which("claude"):
+            return "cli"
+        log.warning("CLAUDE_CODE_OAUTH_TOKEN is set but the `claude` CLI is not installed")
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        import anthropic
+
+        return anthropic.Anthropic()
+    return None
 
 
 def _call(client, cfg: dict, system: str, user: str, schema: dict) -> dict | None:
+    if client == "cli":
+        return _call_cli(cfg, system, user, schema)
+    return _call_api(client, cfg, system, user, schema)
+
+
+def _call_cli(cfg: dict, system: str, user: str, schema: dict) -> dict | None:
+    cmd = [
+        "claude", "-p",
+        "--model", cfg.get("model", "claude-opus-5-5"),
+        "--effort", cfg.get("effort", "medium"),
+        "--system-prompt", system,
+        "--json-schema", json.dumps(schema),
+        "--output-format", "json",
+        # Plain text-in, JSON-out: no tools, MCP servers, settings or saved sessions.
+        "--tools", "",
+        "--strict-mcp-config",
+        "--setting-sources", "",
+        "--no-session-persistence",
+    ]
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc = subprocess.run(cmd, input=user, capture_output=True, text=True,
+                                  timeout=CLI_TIMEOUT, cwd=tmp)
+    except subprocess.TimeoutExpired:
+        log.warning("claude CLI timed out")
+        return None
+    try:
+        out = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        log.warning("claude CLI failed (exit %s): %s", proc.returncode,
+                    (proc.stderr or proc.stdout)[-500:])
+        return None
+    if out.get("is_error") or not isinstance(out.get("structured_output"), dict):
+        log.warning("claude CLI error: %s", str(out.get("result") or out.get("subtype"))[:500])
+        return None
+    return out["structured_output"]
+
+
+def _call_api(client, cfg: dict, system: str, user: str, schema: dict) -> dict | None:
     import anthropic
 
     try:
@@ -121,7 +178,8 @@ def _call(client, cfg: dict, system: str, user: str, schema: dict) -> dict | Non
 def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     new_items = [i for i in section["items"] if i["is_new"]]
     changed_pages = [p for p in section.get("pages", []) if p["status"] == "changed"]
-    if not new_items and not changed_pages and not section.get("quotes"):
+    has_quotes = any(q.get("price") is not None for q in section.get("quotes") or [])
+    if not new_items and not changed_pages and not has_quotes:
         return {"summary": "- Nothing new since the last digest.", "for_you": [], "highlights": []}
 
     payload = {

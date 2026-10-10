@@ -161,7 +161,7 @@
 {% endfor %}
 
 <footer>
-  {% if d.ai %}Summaries written by Claude from the linked articles — check the source before acting on anything.{% else %}AI summaries are off (no ANTHROPIC_API_KEY).{% endif %}
+  {% if d.ai %}Summaries written by Claude from the linked articles — check the source before acting on anything.{% else %}AI summaries are off (no Claude token or API key set).{% endif %}
   Market data from Yahoo Finance, for information only — not investment advice.
 </footer>
 </div>
