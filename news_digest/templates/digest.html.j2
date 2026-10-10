@@ -449,6 +449,42 @@
     show(location.hash.slice(1) || saved || "today", { save: false });
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
+    // Ticker: scroll slowly from right to left in a loop. It pauses while touched,
+    // hovered or focused, so prices stay easy to tap and can still be swiped by hand.
+    const row = document.querySelector(".ticker-row");
+    if (row && row.children.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const originals = [...row.children];
+      originals.forEach(n => {
+        const copy = n.cloneNode(true);
+        copy.setAttribute("aria-hidden", "true");
+        copy.tabIndex = -1;
+        row.appendChild(copy);
+      });
+      const SPEED = 35;  // pixels per second
+      const loopWidth = () => row.children[originals.length].offsetLeft - row.children[0].offsetLeft;
+      let pos = 0, last = null, paused = false, resume = null;
+      const pause = () => { paused = true; clearTimeout(resume); };
+      const unpause = (delay) => { clearTimeout(resume); resume = setTimeout(() => { pos = row.scrollLeft; paused = false; }, delay); };
+      row.addEventListener("pointerenter", e => e.pointerType === "mouse" && pause());
+      row.addEventListener("pointerleave", e => e.pointerType === "mouse" && unpause(600));
+      row.addEventListener("touchstart", pause, { passive: true });
+      row.addEventListener("touchend", () => unpause(2500), { passive: true });
+      row.addEventListener("focusin", pause);
+      row.addEventListener("focusout", () => unpause(600));
+      row.addEventListener("wheel", () => { pause(); unpause(2500); }, { passive: true });
+      const step = t => {
+        if (last !== null && !paused && !document.hidden) {
+          const w = loopWidth();
+          pos += SPEED * Math.min(t - last, 100) / 1000;
+          if (w > 0) pos = ((pos % w) + w) % w;
+          row.scrollLeft = pos;
+        }
+        last = t;
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
     // Swipe left/right on the content to move between tabs (also over the price tiles).
     // Elements that scroll sideways themselves (wide <pre> blocks) keep their own swipe.
     let x0 = null, y0 = null;
