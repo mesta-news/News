@@ -1,11 +1,14 @@
 {
- "ai": false,
+ "ai": true,
  "date": "2026-10-10",
  "date_label": "Saturday 10 October 2026",
- "generated_label": "12:20 CEST",
+ "generated_label": "12:28 CEST",
  "sections": [
   {
-   "errors": [],
+   "briefing": null,
+   "errors": [
+    "AI summary failed for this section (see workflow log)."
+   ],
    "icon": "🩺",
    "id": "big",
    "items": [
@@ -82,14 +85,14 @@
      "diff": "",
      "last_changed": "2026-10-10",
      "name": "BIG-register (home)",
-     "status": "new",
+     "status": "unchanged",
      "url": "https://www.bigregister.nl/"
     },
     {
      "diff": "",
      "last_changed": "2026-10-10",
      "name": "BIG-register - English",
-     "status": "new",
+     "status": "unchanged",
      "url": "https://english.bigregister.nl/"
     },
     {
@@ -102,7 +105,10 @@
    "title": "Foreign doctors & BIG registration"
   },
   {
-   "errors": [],
+   "briefing": null,
+   "errors": [
+    "AI summary failed for this section (see workflow log)."
+   ],
    "icon": "🏥",
    "id": "jobs",
    "items": [
@@ -308,7 +314,10 @@
    "title": "Dutch healthcare job market"
   },
   {
-   "errors": [],
+   "briefing": null,
+   "errors": [
+    "AI summary failed for this section (see workflow log)."
+   ],
    "icon": "🤖",
    "id": "ai",
    "items": [
@@ -580,7 +589,10 @@
    "title": "AI - models, tools & techniques"
   },
   {
-   "errors": [],
+   "briefing": null,
+   "errors": [
+    "AI summary failed for this section (see workflow log)."
+   ],
    "icon": "📈",
    "id": "watchlist",
    "items": [
@@ -806,6 +818,19 @@
      "title": "Microsoft launches Microsoft-Decision-1, a fast decision-scoring model built on Alibaba's Qwen"
     },
     {
+     "id": "35834ab170ac",
+     "is_new": true,
+     "link": "https://finance.yahoo.com/markets/stocks/articles/microsoft-plus-2-elite-defensive-101209605.html?.tsrc=rss",
+     "note": "",
+     "published": "2026-10-10T10:12:09+00:00",
+     "snippet": "With the US 10 year Treasury yield near a 24 year high and big bond investors talking about a possible move to 6%, plenty of people are suddenly rethinking risk. Expensive borrowing can punish weaker balance sheets, yet financially solid businesses often hold up better when money is no longer cheap. This article walks through three low risk leaders that offer a sturdier foundation for long term p…",
+     "source": "Yahoo Finance - Microsoft",
+     "sources": [
+      "Yahoo Finance - Microsoft"
+     ],
+     "title": "Microsoft Plus 2 Elite Defensive Stocks"
+    },
+    {
      "id": "2423b3c01ee5",
      "is_new": true,
      "link": "https://www.fool.com/investing/2026/10/10/should-you-buy-sofi-stock-before-oct-27/?.tsrc=rss",
@@ -845,31 +870,17 @@
      "title": "The 10-Year Treasury Yield Is Near a 24-Year High. History Says Stock Investors Should Do This 1 Thing."
     },
     {
-     "id": "146a7032d30b",
+     "id": "9661b34eb91c",
      "is_new": true,
-     "link": "https://www.fool.com/investing/2026/10/10/palantir-stock-rose-60-in-the-third-quarter-here-s-what-its-other-big-quarters-did-next/?.tsrc=rss",
+     "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1aWnhreUhIY0NHMjVRZlVRN2tjUnZnYl9OWEh4TFNnR0hMY3htR2JaSzI2eEYzek1mS1ZXNnFJbXFjYjVjcmFBTjlVNFNKTVVUenJxZ0ZadFFXTmNWemt5MmJQZ2pQRlk?oc=5",
      "note": "",
-     "published": "2026-10-10T09:33:02+00:00",
-     "snippet": "The software company has seen five other quarters as strong. Did its stock keep climbing afterward?",
-     "source": "Yahoo Finance - Nvidia",
+     "published": "2026-10-10T09:44:16+00:00",
+     "snippet": "",
+     "source": "Mashable",
      "sources": [
-      "Yahoo Finance - Nvidia"
+      "Mashable"
      ],
-     "title": "Palantir Stock Rose 60% in the Third Quarter. Here's What Its Other Big Quarters Did Next."
-    },
-    {
-     "id": "aa5d65d82917",
-     "is_new": true,
-     "link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPNVNlaWExdUYtd1ljYnYyUXFSTk9xMnNTYm5CRDFUZFdOT2hHOXNpUElScUtYd0JiVVU0MmsxdFFKTEVuQnY1ZUxjdXBlS3cwbWdtRkdncWNMTjZvY3p3TUxrMlVsYjQ5eXVYSEEwWEUxaXpHd3ltYzZ1cWJBZ3BGWkR2TDFOOUJZVjBj?oc=5",
-     "note": "",
-     "published": "2026-10-09T21:32:40+00:00",
-     "snippet": "Cheaper open-weight AI models were supposed to threaten Microsoft. Morgan Stanley now thinks they could feed its biggest growth engines.",
-     "source": "TheStreet",
-     "sources": [
-      "TheStreet",
-      "Yahoo Finance - Microsoft"
-     ],
-     "title": "Microsoft gets paid no matter which AI model wins"
+     "title": "Microsoft's Surface Laptop Ultra is an AI supercomputer dressed as a laptop"
     }
    ],
    "max_items": 20,
@@ -1732,7 +1743,7 @@
      ],
      "symbol": "META",
      "w1": -1.2924450553250533,
-     "ytd": 9.15482270795469
+     "ytd": 9.154832826928061
     },
     {
      "as_of": "2026-10-09",
@@ -1810,13 +1821,16 @@
      ],
      "symbol": "TSM",
      "w1": -4.118194777903906,
-     "ytd": 50.341987627353426
+     "ytd": 50.34200284387502
     }
    ],
    "title": "Watchlist news"
   },
   {
-   "errors": [],
+   "briefing": null,
+   "errors": [
+    "AI summary failed for this section (see workflow log)."
+   ],
    "icon": "🌍",
    "id": "business",
    "items": [
@@ -1832,6 +1846,19 @@
       "NOS Economie"
      ],
      "title": "Huishoudens gaan komende tijd meer betalen voor gas, toename in vaste energiecontracten"
+    },
+    {
+     "id": "7d7c60644752",
+     "is_new": true,
+     "link": "https://news.google.com/rss/articles/CBMieEFVX3lxTE5jSmxlYmJBTk1ldG95OFJFNGhtanEwTkUwQWJWdk5rM3NiUFo1Q1k1UEswWEpYdVVaZFkyWFFOWFZzWDgwbzhBampkWUwzd0tZT0dyamw5RlB6aWRmOTlCQmJYbWVfaG5vR1Q2U2I4WHVoSHZpUXF3cg?oc=5",
+     "note": "",
+     "published": "2026-10-10T09:00:00+00:00",
+     "snippet": "",
+     "source": "Bloomberg.com",
+     "sources": [
+      "Bloomberg.com"
+     ],
+     "title": "AI's Supercharging a Scam Economy Bigger Than the Cocaine Trade"
     },
     {
      "id": "d3b021bf36fa",
@@ -2069,19 +2096,6 @@
       "Reuters"
      ],
      "title": "Wall Street posts weekly gains with earnings, inflation data on tap"
-    },
-    {
-     "id": "8bfcec609772",
-     "is_new": true,
-     "link": "https://www.marketwatch.com/story/my-brother-in-law-convinced-his-parents-to-sign-over-their-home-and-savings-to-buy-a-3-million-compound-do-i-intervene-03fb96b7?mod=mw_rss_topstories",
-     "note": "",
-     "published": "2026-10-09T23:15:00+00:00",
-     "snippet": "“Both properties will be solely in his name.”",
-     "source": "MarketWatch",
-     "sources": [
-      "MarketWatch"
-     ],
-     "title": "My brother-in-law convinced his parents to sign over their home and life savings to buy a $3 million compound. Do I intervene?"
     }
    ],
    "max_items": 20,
