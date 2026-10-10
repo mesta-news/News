@@ -24,6 +24,12 @@ SECTION_SCHEMA = {
         "summary": {"type": "array", "items": {"type": "string"}},
         "for_you": {"type": "array", "items": {"type": "string"}},
         "on_radar": {"type": "array", "items": {"type": "string"}},
+        "explainer": {
+            "type": "object",
+            "properties": {"title": {"type": "string"}, "text": {"type": "string"}},
+            "required": ["title", "text"],
+            "additionalProperties": False,
+        },
         "highlights": {
             "type": "array",
             "items": {
@@ -34,7 +40,7 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "for_you", "on_radar", "highlights"],
+    "required": ["summary", "for_you", "on_radar", "explainer", "highlights"],
     "additionalProperties": False,
 }
 
@@ -158,6 +164,24 @@ SECTION_FOCUS = {
         "bold lead-in with the region, e.g. **Netherlands: cabinet ...**. Stay "
         "neutral and factual; attribute claims to their source."
     ),
+    "technology": (
+        "Consumer and computing technology outside AI models (AI has its own tab): "
+        "new phones, laptops, PCs, chips (CPU/GPU), TVs, wearables and consoles; "
+        "launch dates and prices (in euros when given, Netherlands availability); "
+        "reviews with a clear verdict; worthwhile deals and price drops; EU tech "
+        "rules that change what we can buy (DMA, right to repair, USB-C). Skip "
+        "rumours unless from a reliable source, and say when something is a rumour."
+    ),
+    "gaming": (
+        "Gaming news for a PlayStation/PC player. First anything about his games: "
+        "GTA 6 (release date, trailers, delays), Gran Turismo 7 (monthly updates, "
+        "new cars and tracks), Age of Empires / Age of Mythology (patches, DLC), "
+        "Red Dead Redemption, Cyberpunk 2077 / CD Projekt, Ghost of Tsushima / "
+        "Ghost of Yotei. Then notable new releases and review scores in similar "
+        "genres (open world, racing, strategy, action), PlayStation Plus monthly "
+        "games and good sales on PS Store or Steam, and console hardware news. "
+        "Give dates and prices, and label rumours and leaks as such."
+    ),
     "business": (
         "Give the essential macro and business picture of the day like a "
         "Reuters/Bloomberg morning briefing: markets, central banks, big deals, "
@@ -175,6 +199,8 @@ Rules:
 - "summary": a list of 2-6 bullet points (one string each, markdown allowed, no leading dash) with the most important developments. Start each with a short **bold lead-in** (3-7 words), then at most two short sentences. If nothing meaningful happened, say so in one bullet.
 - "for_you": 0-3 concrete takeaways or actions for us, based on the profile, one sentence each (empty list if none).
 - "on_radar": 0-4 upcoming events with a date that the articles or data mention (central bank meetings, data releases, earnings, auctions, regulatory deadlines, conferences), each starting with the date, e.g. "23 Oct: ECB rate decision". Never guess a date; empty list if none.
+- "explainer": when one development needs background to be understood, a short explainer: "title" (a question, e.g. "Why does the 10s30s slope matter?") and "text" (80-140 words, plain language, using only the provided articles and data plus well-established general knowledge, no new news facts). Empty strings when nothing needs explaining.
+- If "previous_briefing" is given, it is what this section said in the last edition: don't repeat it; say when something is a follow-up ("update:", "as expected", "reversal") and what changed.
 - "highlights": up to 6 of the most useful articles, by their id, each with a note of at most 20 words on why it matters to us.
 """
 
@@ -280,7 +306,8 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_quotes = any(q.get("price") is not None for q in section.get("quotes") or [])
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
-        return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [], "highlights": []}
+        return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [],
+                "explainer": {"title": "", "text": ""}, "highlights": []}
 
     payload = {
         "section": section["title"],
@@ -301,6 +328,9 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
              for k, v in q.items() if k != "spark"}
             for q in section["quotes"]
         ]
+
+    if section.get("previous_briefing"):
+        payload["previous_briefing"] = section["previous_briefing"]
 
     if has_rates:
         payload["key_rates"] = [

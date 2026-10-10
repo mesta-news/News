@@ -13,6 +13,8 @@ A private daily news digest for the two of us. It covers:
 | 🏦 Dutch banking & ALM | Dutch banks (ING, ABN AMRO, Rabobank, de Volksbank, Brand New Day…), savings and mortgage rates, DNB / ECB / EBA supervision, IRRBB and liquidity regulation, the pension reform (Wtp) and the long end of the swap curve, the housing market. Tiles show Dutch new-mortgage and term-deposit rates and Dutch inflation; each briefing ends with an **On the radar** list of dated upcoming events |
 | ⚡ Energy & commodities | Oil (Brent, WTI, OPEC+), Dutch TTF and US gas, LNG, EU carbon (ETS), power prices and Dutch energy news (energy bills, Gasunie, TenneT grid congestion). Tiles show Brent, WTI, TTF, Henry Hub, heating oil, Shell and TotalEnergies, plus euro-area and Dutch energy inflation |
 | 🗞️ Netherlands, Morocco & the world | General news in three groups that take turns so each gets space: the Netherlands (NOS, NL Times, DutchNews), Morocco (Morocco World News, Hespress, Google News in English, French and Dutch) and major world news (BBC, Al Jazeera, Reuters) |
+| 💻 Technology | Hardware and consumer tech outside AI: phones, laptops, chips, TVs, consoles, reviews, deals and EU tech rules (The Verge, Ars Technica, Engadget, Tom's Hardware, Tweakers) |
+| 🎮 Gaming | GTA 6, Gran Turismo 7, Age of Empires, Red Dead, Cyberpunk 2077, Ghost of Tsushima/Yotei, PlayStation Plus and sales (IGN, GameSpot, PC Gamer and Eurogamer filtered to those games, PlayStation Blog, Xbox Wire, Google News) |
 | 🌍 Business & markets | A Reuters/Bloomberg-style morning picture (Reuters and Bloomberg via Google News, CNBC, BBC, MarketWatch, NOS Economie) |
 
 The page has one tab per section plus a **Today** front page; each phone remembers the last tab opened, so each reader lands on their own sections. Swipe left/right to change tabs (or use the arrow keys on a computer). Tap a price in the black ticker to jump to its tile.
@@ -21,6 +23,12 @@ Every morning a GitHub Action collects the news, asks Claude to write a short
 briefing per section ("what happened", "what it means for us", the best
 articles), and publishes the result as a web page on GitHub Pages. You can
 also have it emailed to you.
+
+## Depth
+
+* **Coming up** on the Today page collects every tab's dated events (central bank meetings, data releases, launches, game releases) in date order.
+* Some briefings end with an **Explainer**, a short background note on the one development that needs context.
+* Claude sees each tab's previous briefing, so it flags follow-ups and reversals instead of repeating yesterday.
 
 ## Notifications
 

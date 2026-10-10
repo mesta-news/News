@@ -92,8 +92,8 @@ def _vapid_header(endpoint: str, key: ec.EllipticCurvePrivateKey, subject: str) 
     return f"vapid t={jwt}, k={public_key_b64(key)}"
 
 
-def send(sub: dict, message: dict, key: ec.EllipticCurvePrivateKey, subject: str) -> int:
-    """Send one notification; returns the push service's HTTP status."""
+def send(sub: dict, message: dict, key: ec.EllipticCurvePrivateKey, subject: str) -> requests.Response:
+    """Send one notification; returns the push service's response."""
     body = encrypt(json.dumps(message, ensure_ascii=False).encode(), sub["keys"]["p256dh"], sub["keys"]["auth"])
     headers = {
         "Authorization": _vapid_header(sub["endpoint"], key, subject),
@@ -102,9 +102,9 @@ def send(sub: dict, message: dict, key: ec.EllipticCurvePrivateKey, subject: str
         "TTL": str(TTL),
         "Urgency": "normal",
     }
-    if message.get("tag"):
-        headers["Topic"] = message["tag"][:32]  # replaces an undelivered message for the same tab
-    return requests.post(sub["endpoint"], data=body, headers=headers, timeout=20).status_code
+    # No Topic header: Apple's push service (iPhone) rejects some requests that carry one.
+    # The notification's tag already replaces an older one for the same tab on the phone.
+    return requests.post(sub["endpoint"], data=body, headers=headers, timeout=20)
 
 
 def parse_codes(text: str) -> list[dict]:
@@ -169,17 +169,20 @@ def notify_all(digest: dict, site_url: str) -> None:
             if site_url:
                 msg = {**msg, "url": site_url + msg["url"][2:], "icon": site_url + msg["icon"]}
             try:
-                status = send(sub, msg, key, subject)
+                res = send(sub, msg, key, subject)
             except requests.RequestException as exc:
                 log.warning("push to %s failed: %s", who, exc)
                 break
+            status = res.status_code
             if status in (404, 410):
                 log.warning("push: %s's subscription has expired; remove that line from "
                             "PUSH_SUBSCRIPTIONS and turn notifications on again in the app", who)
                 break
             if status >= 400:
-                log.warning("push to %s: HTTP %s", who, status)
-                break
+                # Push services explain rejections in the body, e.g. Apple's {"reason": "BadJwtToken"}.
+                log.warning("push to %s (%s): HTTP %s %s", who, urlsplit(sub["endpoint"]).netloc,
+                            status, res.text[:300].strip())
+                continue
             sent += 1
         log.info("push: %d notification(s) sent to %s", sent, who)
 
