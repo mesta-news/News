@@ -4,6 +4,15 @@
 <title>The Daily Brief · {{ d.date_label }}</title>
 {% include "_head.html.j2" %}
 <style>
+  /* One colour per tab (from config.yaml); used for the tab, its page and its notifications. */
+  {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[0] }}; }
+  {% endfor %}
+  @media (prefers-color-scheme: dark) {
+    {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[1] or s.color[0] }}; }
+    {% endfor %}
+  }
+  [data-cat] .kicker, [data-cat].kicker { color: var(--cat); }
+
   /* Section tabs */
   .tabs { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px;
           padding: 0 16px; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--rule);
@@ -18,10 +27,13 @@
   .tabs a.active { color: var(--ink); border-bottom-color: var(--claret); }
   .tabs .count { margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: var(--panel);
                  color: var(--muted); font-size: .64rem; letter-spacing: 0; }
+  .tabs a::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px;
+                    border-radius: 2px; background: var(--cat, var(--claret)); vertical-align: 1px; }
   .tabs a.unread::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 5px;
-                         border-radius: 50%; background: var(--claret); vertical-align: 2px; }
+                         border-radius: 50%; background: var(--cat, var(--claret)); vertical-align: 2px; }
+  .tabs a.active { color: var(--cat, var(--ink)); border-bottom-color: var(--cat, var(--claret)); }
   .tabs a.active::after { display: none; }
-  .tabs a.active .count { background: var(--claret); color: var(--paper); }
+  .tabs a.active .count { background: var(--cat, var(--claret)); color: var(--paper); }
 
   /* Black market ticker */
   .ticker { background: var(--tick-bg); color: var(--tick-ink); }
@@ -43,7 +55,7 @@
   @keyframes fade { from { opacity: .5; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .js .panel.active { animation: none; } }
   .panel { padding-top: 22px; }
-  .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--rule-strong); }
+  .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--cat, var(--rule-strong)); }
   .panel-head h2 { margin: 6px 0 0; font: 600 clamp(1.7rem, 6.5vw, 2.3rem)/1.1 var(--serif); letter-spacing: -.015em; }
   .panel-head .meta { margin-top: 6px; }
 
@@ -61,7 +73,7 @@
 
   .cards { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 18px; }
   @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; column-gap: 32px; } }
-  .card { padding: 16px 0 18px; border-top: 1px solid var(--rule); }
+  .card { padding: 14px 0 18px; border-top: 3px solid var(--cat, var(--rule)); }
   .card-title { display: block; margin: 6px 0 4px; font: 600 1.22rem/1.25 var(--serif); text-decoration: none; }
   .card-title:hover { text-decoration: underline; text-underline-offset: 3px; }
   .standfirst { margin: 0; color: var(--ink-2); font-size: .92rem; }
@@ -70,18 +82,19 @@
   .card li a { text-decoration: none; }
   .card li a:hover { text-decoration: underline; }
   .more { display: inline-block; margin-top: 10px; font: 700 .7rem/1 var(--sans); letter-spacing: .08em;
-          text-transform: uppercase; color: var(--claret); text-decoration: none; }
+          text-transform: uppercase; color: var(--cat, var(--claret)); text-decoration: none; }
 
   /* Section body */
   .brief { font-size: .98rem; }
   .brief ul { margin: 0; padding: 0; list-style: none; }
   .brief li { position: relative; padding: 0 0 12px 16px; margin: 0 0 12px; border-bottom: 1px solid var(--rule); }
   .brief li:last-child { border-bottom: 0; margin-bottom: 0; }
-  .brief li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; background: var(--claret); }
+  .brief li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; background: var(--cat, var(--claret)); }
   .brief p { margin: 0 0 12px; }
   .brief strong { font: 700 1.02rem/1.3 var(--serif); }
 
-  .foryou { margin: 18px 0 4px; padding: 14px 16px; background: var(--teal-soft); border-left: 4px solid var(--teal); }
+  .foryou { margin: 18px 0 4px; padding: 14px 16px; background: var(--teal-soft); border-left: 4px solid var(--cat, var(--teal));
+            background: color-mix(in srgb, var(--cat, var(--teal)) 10%, var(--paper)); }
   .foryou ul { margin: 8px 0 0; padding-left: 18px; }
   .foryou li { margin: 0 0 6px; font-size: .94rem; }
   .foryou li:last-child { margin-bottom: 0; }
@@ -90,7 +103,7 @@
   .radar ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .radar li { display: flex; gap: 12px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: .92rem; }
   .radar li:first-child { border-top: 0; }
-  .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--claret); font-variant-numeric: tabular-nums; }
+  .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--cat, var(--claret)); font-variant-numeric: tabular-nums; }
   .stale { margin: 10px 0 0; padding: 8px 12px; font-size: .8rem; background: var(--alert-soft); color: var(--alert); }
   .alert { margin: 0 0 16px; padding: 12px 14px; background: var(--alert-soft); color: var(--alert); font-size: .9rem; }
   .alert a { font-weight: 700; }
@@ -118,11 +131,11 @@
 
   /* Stories */
   .label { margin: 26px 0 0; padding-top: 8px; border-top: 1px solid var(--rule-strong); }
-  .group-label { margin: 18px 0 0; color: var(--claret); }
+  [data-cat] .group-label { margin: 18px 0 0; color: var(--ink-2); }
   .stories { list-style: none; margin: 0; padding: 0; }
   .stories li { padding: 13px 0; border-bottom: 1px solid var(--rule); }
   .stories li:last-child { border-bottom: 0; }
-  .stories .src { font: 700 .66rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+  .stories .src { font: 700 .66rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--cat, var(--teal)); }
   .stories a.hl { display: block; margin-top: 3px; font: 600 1.06rem/1.32 var(--serif); text-decoration: none; }
   .stories a.hl:hover { text-decoration: underline; text-underline-offset: 3px; }
   .stories .meta { margin-top: 3px; }
@@ -133,6 +146,30 @@
 
   details { margin-top: 6px; }
   a, button, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .minute li[data-cat] { padding-left: 12px; border-left: 3px solid var(--cat); }
+
+  /* Notification settings */
+  dialog.notify { width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto;
+                  padding: 20px; border: 0; border-radius: 14px; background: var(--card); color: var(--ink);
+                  box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  dialog.notify::backdrop { background: rgba(0,0,0,.45); }
+  .notify h3 { margin: 0 0 4px; font: 600 1.4rem/1.2 var(--serif); }
+  .notify p { margin: 6px 0; font-size: .9rem; color: var(--ink-2); }
+  .notify .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 12px 0; }
+  .notify label.choice { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .9rem; cursor: pointer; }
+  .notify label.choice input { width: 18px; height: 18px; accent-color: var(--cat, var(--claret)); }
+  .notify label.choice .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--cat, var(--claret)); flex: none; }
+  .notify input[type=text], .notify textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--rule); border-radius: 8px;
+                                               background: var(--paper); color: var(--ink); font: 400 .9rem var(--sans); }
+  .notify textarea { height: 86px; font: 400 .72rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+  .notify .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .notify button.btn { padding: 10px 14px; border: 0; border-radius: 8px; font: 700 .85rem var(--sans); cursor: pointer;
+                       background: var(--claret); color: #fff; }
+  .notify button.btn.ghost { background: var(--panel); color: var(--ink); }
+  .notify ol { margin: 8px 0; padding-left: 20px; font-size: .86rem; color: var(--ink-2); }
+  .notify .status { min-height: 1.2em; font-size: .85rem; font-weight: 600; color: var(--alert); }
+  .notify .status.ok { color: var(--up); }
+
   details summary { cursor: pointer; list-style: none; padding: 10px 0; font: 700 .7rem/1 var(--sans);
                     letter-spacing: .08em; text-transform: uppercase; color: var(--claret); }
   details summary::-webkit-details-marker { display: none; }
@@ -168,13 +205,20 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
       </a>
       <a class="brand" href="#today" data-tab="today">The Daily Brief<span>.</span></a>
-      <button class="icon-btn refresh" type="button" aria-label="Refresh" onclick="location.reload()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-      </button>
+      <div class="appbar-end">
+        {% if vapid_public_key %}
+        <button class="icon-btn" id="bell" type="button" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </button>
+        {% endif %}
+        <button class="icon-btn refresh" type="button" aria-label="Refresh" onclick="location.reload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </button>
+      </div>
     </div>
     <nav class="tabs" aria-label="Sections">
       <a href="#today" data-tab="today">Today</a>
-      {% for s in d.sections %}<a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.short or s.title }}{% if s.new_count %}<span class="count num">{{ s.new_count }}</span>{% endif %}</a>{% endfor %}
+      {% for s in d.sections %}<a href="#{{ s.id }}" data-tab="{{ s.id }}" data-cat="{{ s.id }}">{{ s.short or s.title }}{% if s.new_count %}<span class="count num">{{ s.new_count }}</span>{% endif %}</a>{% endfor %}
     </nav>
   </div>
 </header>
@@ -208,7 +252,7 @@
         {% for b in d.top %}
         {% if b is mapping %}
         {% set sec = d.sections | selectattr("id", "equalto", b.section) | first %}
-        <li><div class="kicker"><a href="#{{ b.section }}" data-tab="{{ b.section }}">{{ sec.short or sec.title if sec else b.section }}</a></div><p>{{ b.text }}</p></li>
+        <li data-cat="{{ b.section }}"><div class="kicker"><a href="#{{ b.section }}" data-tab="{{ b.section }}">{{ sec.short or sec.title if sec else b.section }}</a></div><p>{{ b.text }}</p></li>
         {% else %}<li><p>{{ b }}</p></li>{% endif %}
         {% endfor %}
       </ol>
@@ -219,7 +263,7 @@
       {% for s in d.sections %}
       {% set lead = s.briefing.summary | lead if s.briefing else none %}
       {% set fresh = s["items"] | selectattr("is_new") | list %}
-      <div class="card">
+      <div class="card" data-cat="{{ s.id }}">
         <div class="kicker">{{ s.short or s.title }}</div>
         {% if lead and lead.head %}
         <a class="card-title" href="#{{ s.id }}" data-tab="{{ s.id }}">{{ lead.head }}</a>
@@ -239,7 +283,7 @@
   </article>
 
   {% for s in d.sections %}
-  <article class="panel" id="tab-{{ s.id }}" data-panel="{{ s.id }}">
+  <article class="panel" id="tab-{{ s.id }}" data-panel="{{ s.id }}" data-cat="{{ s.id }}">
     <div class="panel-head">
       <div class="kicker">{{ s.short or s.title }}</div>
       <h2>{{ s.title }}</h2>
@@ -381,6 +425,133 @@
     <p><a href="archive.html">Past editions</a></p>
   </footer>
 </main>
+
+{% if vapid_public_key %}
+<dialog class="notify" id="notify" aria-labelledby="notify-title">
+  <h3 id="notify-title">Notifications</h3>
+  <p>Get a notification each morning for the tabs you choose, in that tab's colour.</p>
+  <p class="ios-hint" hidden><strong>On iPhone:</strong> first tap Share → <em>Add to Home Screen</em>, open the Brief from your home screen, then tap the bell again.</p>
+  <div class="choices">
+    <label class="choice"><input type="checkbox" value="today"><span class="dot"></span><span>☀️ Today</span></label>
+    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.emoji }} {{ s.short or s.title }}</span></label>
+    {% endfor %}
+  </div>
+  <input type="text" id="notify-name" maxlength="40" placeholder="Name for this phone (optional)" autocomplete="off">
+  <div class="row">
+    <button class="btn" type="button" id="notify-on">Turn on</button>
+    <button class="btn ghost" type="button" id="notify-off" hidden>Turn off</button>
+    <button class="btn ghost" type="button" id="notify-close">Close</button>
+  </div>
+  <p class="status" id="notify-status" role="status"></p>
+  <div id="notify-code" hidden>
+    <p><strong>Last step, once per phone</strong> (and again if you change your tabs):</p>
+    <ol>
+      <li>Copy this code.</li>
+      <li>On GitHub open <a id="notify-vars" target="_blank" rel="noopener">Settings → Secrets and variables → Actions → Variables</a>.</li>
+      <li>Edit <strong>PUSH_SUBSCRIPTIONS</strong> (create it if it doesn't exist) and paste the code on its own line. Keep the other phone's line; replace this phone's old line if there is one.</li>
+    </ol>
+    <textarea id="notify-text" readonly></textarea>
+    <div class="row"><button class="btn" type="button" id="notify-copy">Copy code</button></div>
+  </div>
+</dialog>
+<script>
+  // Web Push sign-up. The daily GitHub Action sends the notifications; this only
+  // subscribes the phone and shows the code to register it.
+  (() => {
+    const KEY = "{{ vapid_public_key }}";
+    const $ = id => document.getElementById(id);
+    const dlg = $("notify"), status = $("notify-status");
+    const boxes = [...dlg.querySelectorAll("input[type=checkbox]")];
+    const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+    const load = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const say = (text, ok) => { status.textContent = text; status.classList.toggle("ok", !!ok); };
+    const b64u = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const fromB64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+    // GitHub settings link: <owner>.github.io/<repo>/ -> github.com/<owner>/<repo>
+    const owner = location.hostname.split(".")[0], repo = location.pathname.split("/")[1];
+    $("notify-vars").href = `https://github.com/${owner}/${repo}/settings/variables/actions`;
+
+    const saved = JSON.parse(load("brief-push-tabs") || "null");
+    const lastTab = load("brief-tab");
+    boxes.forEach(b => b.checked = saved ? saved.includes(b.value) : (b.value === "today" || b.value === lastTab));
+    $("notify-name").value = load("brief-push-name") || "";
+
+    function showCode(sub, tabs, name) {
+      const j = sub.toJSON();
+      const code = "brief1." + b64u(new TextEncoder().encode(JSON.stringify({ endpoint: j.endpoint, keys: j.keys, tabs, name })));
+      $("notify-text").value = code;
+      $("notify-code").hidden = false;
+      store("brief-push-code", code);
+    }
+
+    async function refresh() {
+      $("notify-off").hidden = true;
+      $("notify-code").hidden = true;
+      dlg.querySelector(".ios-hint").hidden = !(ios && !standalone);
+      if (!supported) { say(ios && !standalone ? "" : "This browser can't receive notifications."); return; }
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub && Notification.permission === "granted") {
+        $("notify-off").hidden = false;
+        $("notify-on").textContent = "Save tabs";
+        say("Notifications are on for this phone.", true);
+        const code = load("brief-push-code");
+        if (code) { $("notify-text").value = code; $("notify-code").hidden = false; }
+      } else {
+        $("notify-on").textContent = "Turn on";
+        say(Notification.permission === "denied" ? "Notifications are blocked. Allow them for this site in your phone's settings." : "");
+      }
+    }
+
+    $("bell").addEventListener("click", () => { dlg.showModal(); refresh().catch(e => say(e.message)); });
+    $("notify-close").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+    $("notify-on").addEventListener("click", async () => {
+      const tabs = boxes.filter(b => b.checked).map(b => b.value);
+      const name = $("notify-name").value.trim();
+      if (!tabs.length) { say("Choose at least one tab."); return; }
+      if (!supported) { say(ios ? "Add the Brief to your Home Screen first (see above)." : "This browser can't receive notifications."); return; }
+      try {
+        if (await Notification.requestPermission() !== "granted") { say("Permission was not given."); return; }
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        const key = fromB64u(KEY);
+        const current = sub && sub.options.applicationServerKey && new Uint8Array(sub.options.applicationServerKey);
+        if (sub && (!current || current.join() !== key.join())) { await sub.unsubscribe(); sub = null; }
+        sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+        store("brief-push-tabs", JSON.stringify(tabs));
+        store("brief-push-name", name);
+        showCode(sub, tabs, name);
+        $("notify-off").hidden = false;
+        $("notify-on").textContent = "Save tabs";
+        say("Notifications are on. Finish the last step below.", true);
+        reg.showNotification("The Daily Brief", { body: "Notifications are on. You'll get one per chosen tab each morning.",
+                                                  icon: "icon-192.png", badge: "badge-72.png", tag: "welcome" }).catch(() => {});
+      } catch (e) { say("Couldn't turn on notifications: " + e.message); }
+    });
+
+    $("notify-off").addEventListener("click", async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+      store("brief-push-code");
+      await refresh();
+      say("Notifications are off. You can delete this phone's line from PUSH_SUBSCRIPTIONS on GitHub.");
+    });
+
+    $("notify-copy").addEventListener("click", async () => {
+      const t = $("notify-text");
+      try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand("copy"); }
+      say("Code copied.", true);
+    });
+  })();
+</script>
+{% endif %}
 
 <script>
   // Tabs: show one section at a time, remember the last one per device, swipe to switch.

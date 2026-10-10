@@ -22,6 +22,24 @@ briefing per section ("what happened", "what it means for us", the best
 articles), and publishes the result as a web page on GitHub Pages. You can
 also have it emailed to you.
 
+## Notifications
+
+Each tab has its own colour (set with `color:` in `config.yaml`), and the app can
+send a morning notification per tab in that colour. There is no server, so it
+takes a one-time setup:
+
+1. **Once:** add a repository secret `VAPID_PRIVATE_KEY` (Settings → Secrets and
+   variables → Actions → Secrets). Make a key with `python -m news_digest.push`.
+   The bell icon appears in the app after the next build.
+2. **On each phone:** open the app (on iPhone: from the Home Screen icon, iOS 16.4+),
+   tap the bell, pick the tabs and tap *Turn on*. Copy the code it shows.
+3. Add the code as a new line to the repository **variable** `PUSH_SUBSCRIPTIONS`
+   (Settings → Secrets and variables → Actions → Variables). One line per phone.
+
+Notifications go out after the scheduled morning run, and after a manual
+"Run workflow" so you can test them. If a phone's subscription expires, the
+workflow log says so; turn notifications on again and replace that line.
+
 ## How it works (and why not a JavaScript-only web app)
 
 A web page running in the browser **cannot reliably read other websites**.

@@ -48,15 +48,16 @@
   /* Masthead bar */
   .appbar { position: sticky; top: 0; z-index: 20; padding-top: var(--safe-top);
             background: var(--paper); border-bottom: 1px solid var(--rule); }
-  .appbar-row { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; height: 52px; }
+  .appbar-row { display: grid; grid-template-columns: 84px 1fr 84px; align-items: center; height: 52px; }
+  .appbar-end { display: flex; justify-content: flex-end; gap: 4px; }
   .brand { justify-self: center; font: 700 1.3rem/1 var(--serif); letter-spacing: -.01em; text-decoration: none; }
   .brand span { color: var(--claret); }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
               border: 0; background: none; color: var(--ink-2); border-radius: 10px; cursor: pointer; }
   .icon-btn:active { background: var(--panel); }
   .icon-btn svg { width: 20px; height: 20px; }
-  .refresh { visibility: hidden; }
-  @media (display-mode: standalone) { .refresh { visibility: visible; } }
+  .refresh { display: none; }
+  @media (display-mode: standalone) { .refresh { display: inline-flex; } }
 
   .kicker { font: 700 .68rem/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
   .meta { color: var(--muted); font-size: .78rem; }
