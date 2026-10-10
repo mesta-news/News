@@ -1,0 +1,139 @@
+# ---------------------------------------------------------------------------
+# Personal news digest configuration
+# Edit this file to change what the digest tracks. No code changes needed.
+# ---------------------------------------------------------------------------
+
+# Who the digest is for. This text is ONLY sent to the AI summariser (it is
+# never shown on the published page). The more specific, the better the
+# "why this matters to you" notes become. Fill in the TODOs.
+profile: |
+  We are a couple who recently moved to the Netherlands.
+  - My wife is a medical doctor trained outside the Netherlands.
+    TODO: country where her diploma was obtained (EU/EEA or non-EU?), her
+    specialty (if any), years of experience, and her Dutch language level.
+    She is looking for work in Dutch healthcare and needs to obtain BIG
+    registration as a doctor (arts). Relevant: the foreign-diploma procedure
+    (CIBG / Commissie Buitenlandse Gediplomeerden Volksgezondheid), exams such
+    as the AKV-toets, BI-toets and language requirements, timelines/waiting
+    times, costs, and jobs available before/after registration (e.g. ANIOS,
+    research, healthcare roles that do not require BIG registration).
+  - I build software with AI and want to sharpen my skills: new model
+    capabilities, tools, APIs, techniques and practical patterns I can use.
+  - We don't hold stocks yet; we follow a watchlist (Wolters Kluwer, AI
+    companies, broad indexes such as the S&P 500) and general business news.
+    We think in euros.
+
+# Claude model used for the summaries (only if ANTHROPIC_API_KEY is set).
+model: claude-opus-5-5
+effort: medium        # low | medium | high  (higher = deeper, slower, pricier)
+language: English     # language of the AI summaries (articles may be Dutch)
+
+# Articles shown in an earlier digest are folded under "Earlier, already shown"
+# so each digest leads with what is new. Remembered for this many days.
+seen_retention_days: 60
+
+# ---------------------------------------------------------------------------
+# Sections
+#   feeds:        RSS/Atom URLs
+#   google_news:  search queries turned into Google News RSS feeds
+#                 (supports OR, "exact phrases", site:example.com, -exclude)
+#   keywords:     optional filter; an item must mention at least one
+#   watch_pages:  official web pages checked for changes on every run. If the
+#                 text of the page changes, the digest shows what changed.
+#   max_age_days: ignore items older than this
+#   max_items:    max articles listed in the section
+# ---------------------------------------------------------------------------
+sections:
+  - id: big
+    title: "Foreign doctors & BIG registration"
+    icon: "🩺"
+    max_age_days: 21
+    max_items: 15
+    google_news:
+      - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl }
+      - { q: '"buitenlandse artsen" OR "buitenlands gediplomeerde" OR "buitenlands diploma" zorg', lang: nl }
+      - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl }
+      - { q: 'artsen "buiten de EU" OR "van buiten Europa" erkenning diploma', lang: nl }
+      - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en }
+      - { q: 'site:medischcontact.nl buitenlandse artsen OR BIG', lang: nl }
+    watch_pages:
+      # Official sources. If a URL stops working the digest will say so -
+      # just update it here.
+      - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
+      - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
+      - { name: "BIG-register - buitenlands diploma", url: "https://www.bigregister.nl/registratie/buitenlands-diploma" }
+
+  - id: jobs
+    title: "Dutch healthcare job market"
+    icon: "🏥"
+    max_age_days: 7
+    max_items: 15
+    google_news:
+      - { q: 'arbeidsmarkt zorg OR "personeelstekort zorg" OR "tekort aan artsen"', lang: nl }
+      - { q: 'ANIOS OR "arts niet in opleiding" OR basisarts vacatures OR opleidingsplaatsen', lang: nl }
+      - { q: 'cao ziekenhuizen OR "cao umc" OR huisartsentekort', lang: nl }
+      - { q: 'site:medischcontact.nl arbeidsmarkt OR vacature OR opleiding', lang: nl }
+      - { q: 'site:skipr.nl OR site:zorgvisie.nl arbeidsmarkt', lang: nl }
+      - { q: 'Netherlands healthcare staff shortage doctors jobs', lang: en }
+
+  - id: ai
+    title: "AI - models, tools & techniques"
+    icon: "🤖"
+    max_age_days: 3
+    max_items: 20
+    feeds:
+      - { name: "OpenAI", url: "https://openai.com/news/rss.xml" }
+      - { name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml" }
+      - { name: "Google AI blog", url: "https://blog.google/technology/ai/rss/" }
+      - { name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml" }
+      - { name: "Simon Willison", url: "https://simonwillison.net/atom/everything/" }
+      - { name: "Latent Space", url: "https://www.latent.space/feed" }
+      - { name: "Hacker News (AI, 150+ pts)", url: "https://hnrss.org/newest?q=LLM+OR+Claude+OR+Anthropic+OR+OpenAI+OR+GPT+OR+Gemini+OR+agent&points=150" }
+    google_news:
+      - { q: 'Anthropic Claude', lang: en }
+      - { q: 'OpenAI OR ChatGPT new model OR launch', lang: en }
+      - { q: 'Google Gemini OR "DeepMind" model launch', lang: en }
+      - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
+
+  - id: watchlist
+    title: "Watchlist news"
+    icon: "📈"
+    max_age_days: 4
+    max_items: 20
+    # Feeds for this section are generated from the watchlist below
+    # (each entry's `news` query + Yahoo Finance headlines).
+
+  - id: business
+    title: "Business & markets"
+    icon: "🌍"
+    max_age_days: 2
+    max_items: 20
+    feeds:
+      - { name: "Google News - Business", url: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en" }
+      - { name: "CNBC Top News", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114" }
+      - { name: "BBC Business", url: "https://feeds.bbci.co.uk/news/business/rss.xml" }
+      - { name: "MarketWatch", url: "https://feeds.content.dowjones.io/public/rss/mw_topstories" }
+      - { name: "NOS Economie", url: "https://feeds.nos.nl/nosnieuwseconomie" }
+    google_news:
+      - { q: 'site:reuters.com markets OR economy OR business', lang: en }
+      - { q: 'site:bloomberg.com markets OR economy', lang: en }
+      - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
+
+# ---------------------------------------------------------------------------
+# Watchlist - quotes come from Yahoo Finance symbols.
+#   Find a symbol at https://finance.yahoo.com (e.g. Amsterdam stocks end in .AS)
+#   news: Google News query for company headlines (optional)
+# ---------------------------------------------------------------------------
+watchlist:
+  - { symbol: "^GSPC",   name: "S&P 500" }
+  - { symbol: "^NDX",    name: "Nasdaq 100" }
+  - { symbol: "^AEX",    name: "AEX (Amsterdam)" }
+  - { symbol: "EURUSD=X", name: "EUR/USD" }
+  - { symbol: "WKL.AS",  name: "Wolters Kluwer", news: '"Wolters Kluwer"' }
+  - { symbol: "ASML.AS", name: "ASML",           news: 'ASML' }
+  - { symbol: "NVDA",    name: "Nvidia",         news: 'Nvidia stock OR earnings' }
+  - { symbol: "MSFT",    name: "Microsoft",      news: 'Microsoft stock OR earnings OR AI' }
+  - { symbol: "GOOGL",   name: "Alphabet",       news: 'Alphabet stock OR earnings' }
+  - { symbol: "AMZN",    name: "Amazon",         news: 'Amazon stock OR earnings OR AWS' }
+  - { symbol: "META",    name: "Meta",           news: 'Meta Platforms stock OR earnings' }
+  - { symbol: "TSM",     name: "TSMC",           news: 'TSMC earnings OR revenue' }

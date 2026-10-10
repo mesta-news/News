@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Digest Archive</title>
+<style>
+  :root { --bg: #f7f6f3; --text: #1d1d1f; --muted: #6b6b70; --accent: #2457c5; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #141416; --text: #ececee; --muted: #9a9aa2; --accent: #7aa2ff; } }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+  a { color: var(--accent); } .meta { color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body><div class="wrap">
+  <h1>Archive</h1>
+  <p><a href="index.html">← latest digest</a></p>
+  <ul>
+  {% for e in entries %}<li><a href="{{ e.date }}.html">{{ e.label }}</a> <span class="meta">{{ e.new_count }} new articles</span></li>{% endfor %}
+  </ul>
+</div></body>
+</html>
