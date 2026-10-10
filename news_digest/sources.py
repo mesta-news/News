@@ -63,10 +63,11 @@ def feeds_for_section(section: dict, watchlist: list[dict]) -> list[dict]:
     """All feed definitions ({name, url}) for a section."""
     feeds = list(section.get("feeds") or [])
     for g in section.get("google_news") or []:
-        feeds.append(
-            {"name": f"Google News ({g.get('lang', 'en')})",
-             "url": google_news_url(g["q"], g.get("lang", "en"))}
-        )
+        feed = {"name": f"Google News ({g.get('lang', 'en')})",
+                "url": google_news_url(g["q"], g.get("lang", "en"))}
+        # Optional per-query filters override the section's.
+        feed.update({k: g[k] for k in ("keywords", "max_age_days") if k in g})
+        feeds.append(feed)
     if section.get("id") == "watchlist":
         for w in watchlist:
             if w.get("news"):
@@ -151,20 +152,19 @@ def collect(section: dict, watchlist: list[dict], now: datetime) -> tuple[list[I
     errors: list[str] = []
     for feed in feeds_for_section(section, watchlist):
         got, err = fetch_feed(feed)
-        items.extend(got)
         if err:
             log.warning(err)
             errors.append(err)
-
-    cutoff = now - timedelta(days=section.get("max_age_days", 3))
-    keywords = [k.lower() for k in section.get("keywords") or []]
+        cutoff = now - timedelta(days=feed.get("max_age_days", section.get("max_age_days", 3)))
+        keywords = [k.lower() for k in feed.get("keywords", section.get("keywords")) or []]
+        items.extend(
+            it for it in got
+            if it.published >= cutoff
+            and (not keywords or any(k in f"{it.title} {it.snippet}".lower() for k in keywords))
+        )
 
     merged: dict[str, Item] = {}
     for it in items:
-        if it.published < cutoff:
-            continue
-        if keywords and not any(k in f"{it.title} {it.snippet}".lower() for k in keywords):
-            continue
         existing = merged.get(it.id)
         if existing is None:
             merged[it.id] = it

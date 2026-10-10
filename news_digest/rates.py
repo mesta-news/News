@@ -1,6 +1,9 @@
 """Key interest rates.
 
 Sources (pick per series in config.yaml with `source:`):
+  Add `spread: [LONG_ID, SHORT_ID]` instead of `id` for a curve spread (long minus
+  short, shown in basis points), e.g. the 2s10s slope.
+
   ecb   - ECB Data Portal (official euro rates, yield curve); id = "FLOW/KEY",
           e.g. "EST/B.EU000A2X2A25.WT" for €STR. Browse https://data.ecb.europa.eu
   yahoo - Yahoo Finance yield tickers, e.g. "^TNX" (US 10-year)
@@ -113,13 +116,26 @@ def fetch(defs: list[dict]) -> tuple[list[dict], str | None]:
     """Return (rows, error). Each row: name, region, value (%), as_of, m1/y1 change in bp."""
     start = date.today() - timedelta(days=HISTORY_DAYS)
 
+    def load(source: str, sid: str) -> list[tuple[date, float]]:
+        return FETCHERS[source](sid, start)
+
     def one(d: dict) -> dict:
+        source = d.get("source", "fred")
+        if "spread" in d:  # e.g. 10Y minus 2Y: long - short, shown in bp
+            long_id, short_id = d["spread"]
+            d = {**d, "id": f"{long_id} - {short_id}"}
         row = {"id": d["id"], "name": d["name"], "region": d.get("region", ""),
-               "url": source_url(d), "value": None}
+               "unit": "bp" if "spread" in d else "%",
+               "url": source_url({**d, "id": d["spread"][0]} if "spread" in d else d),
+               "value": None}
         try:
-            series = FETCHERS[d.get("source", "fred")](d["id"], start)
+            if "spread" in d:
+                short = dict(load(source, d["spread"][1]))
+                series = [(day, v - short[day]) for day, v in load(source, d["spread"][0]) if day in short]
+            else:
+                series = load(source, d["id"])
         except Exception as exc:
-            log.warning("rate %s (%s): %s", d["id"], d.get("source", "fred"), exc)
+            log.warning("rate %s (%s): %s", d["id"], source, exc)
             return row
         if not series:
             log.warning("rate %s: no observations", d["id"])

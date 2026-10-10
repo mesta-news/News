@@ -83,8 +83,10 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
             sec["quotes"], err = markets.quotes(watchlist, now.astimezone(TZ))
             if err:
                 sec["errors"].append(err)
-        if sec["id"] == "rates":
-            sec["rates"], err = rates.fetch(cfg.get("rates") or [])
+        # Rate tiles: a section's own `rates:` list, or the global one for the rates tab.
+        rate_defs = sec_cfg.get("rates") or (cfg.get("rates") if sec["id"] == "rates" else None)
+        if rate_defs:
+            sec["rates"], err = rates.fetch(rate_defs)
             if err:
                 sec["errors"].append(err)
         sec["new_count"] = sum(1 for i in sec["items"] if i["is_new"])
@@ -174,6 +176,12 @@ def _bp(v: float | None) -> str:
     return "0 bp" if v == 0 else f"{v:+.0f} bp".replace("-", "−")
 
 
+def _rateval(r: dict) -> str:
+    if r.get("unit") == "bp":
+        return f"{r['value'] * 100:.0f} bp".replace("-", "−")
+    return f"{r['value']:.2f}%".replace("-", "−")
+
+
 def _shortdate(iso: str | None) -> str:
     try:
         return datetime.fromisoformat(iso).strftime("%-d %b")
@@ -196,7 +204,7 @@ def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
-                       bp=_bp, shortdate=_shortdate, lead=_lead)
+                       bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval)
     return env
 
 
