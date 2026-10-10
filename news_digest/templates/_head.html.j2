@@ -2,8 +2,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fff1e5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,65 +11,59 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>document.documentElement.classList.add("js")</script>
 <style>
+  /* Salmon paper, ink text, claret and teal accents; a black market ticker. */
   :root {
-    --bg: #f7f4ee; --surface: #fffdf9; --text: #17181b; --text-2: #4a4b50; --muted: #7a776f;
-    --line: #e4ded2; --line-strong: #17181b; --accent: #1d5c8c; --accent-soft: #e6eef5;
-    --up: #157f3b; --down: #c0362c; --up-soft: #e3f2e8; --down-soft: #f9e5e2;
-    --alert: #8a5a00; --alert-soft: #fbf1dc;
-    --serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, "Source Serif Pro", Georgia, serif;
+    --paper: #fff1e5; --panel: #f2dfce; --card: #fff8f1; --ink: #1a1817; --ink-2: #33302e;
+    --muted: #66605c; --faint: #8f8782; --rule: #e0cdbc; --rule-strong: #1a1817;
+    --claret: #990f3d; --teal: #0d7680; --teal-soft: #e3eeee;
+    --up: #0a7a3b; --down: #c1272d; --up-soft: #dcefe2; --down-soft: #f8dcdb;
+    --alert: #7a4b00; --alert-soft: #fae6c3;
+    --tick-bg: #000; --tick-ink: #f3f3f3; --tick-muted: #9a9a9a; --tick-up: #3ddc84; --tick-down: #ff5a4f;
+    --serif: "Iowan Old Style", "Charter", "Georgia", "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px); --safe-right: env(safe-area-inset-right, 0px);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #121316; --surface: #191a1e; --text: #ecebe6; --text-2: #c2c0b8; --muted: #8d8b84;
-      --line: #2a2b30; --line-strong: #ecebe6; --accent: #7fb2e0; --accent-soft: #1d2733;
-      --up: #4fc27c; --down: #ff7b6b; --up-soft: #16281d; --down-soft: #2f1a18;
-      --alert: #f0c060; --alert-soft: #2a2414;
+      --paper: #111112; --panel: #1c1c1e; --card: #19191b; --ink: #f2eee9; --ink-2: #d9d4ce;
+      --muted: #a39d97; --faint: #7d7873; --rule: #2c2b2b; --rule-strong: #f2eee9;
+      --claret: #f0668f; --teal: #4fc0c8; --teal-soft: #15292b;
+      --up: #3ec27a; --down: #ff6b61; --up-soft: #12271b; --down-soft: #301615;
+      --alert: #f2c26b; --alert-soft: #2c2312;
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--safe-top) + 104px); }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans);
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 var(--sans);
          -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   a { color: inherit; }
-  .wrap { max-width: 760px; margin: 0 auto;
-          padding: 0 calc(18px + var(--safe-right)) 0 calc(18px + var(--safe-left)); }
+  .wrap { max-width: 980px; margin: 0 auto;
+          padding: 0 calc(16px + var(--safe-right)) 0 calc(16px + var(--safe-left)); }
   .num { font-variant-numeric: tabular-nums; }
+  .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--faint); }
 
-  /* App bar */
-  .appbar { position: sticky; top: 0; z-index: 10; padding-top: var(--safe-top);
-            background: var(--bg);
-            background: color-mix(in srgb, var(--bg) 92%, transparent);
-            -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
-            border-bottom: 1px solid var(--line); }
-  .appbar-row { display: flex; align-items: center; justify-content: space-between; height: 50px; }
-  .brand { font: 700 1.2rem/1 var(--serif); letter-spacing: -.01em; text-decoration: none; }
-  .brand span { color: var(--accent); }
-  .actions { display: flex; gap: 2px; }
+  /* Masthead bar */
+  .appbar { position: sticky; top: 0; z-index: 20; padding-top: var(--safe-top);
+            background: var(--paper); border-bottom: 1px solid var(--rule); }
+  .appbar-row { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; height: 52px; }
+  .brand { justify-self: center; font: 700 1.3rem/1 var(--serif); letter-spacing: -.01em; text-decoration: none; }
+  .brand span { color: var(--claret); }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
-              border: 0; background: none; color: var(--text-2); border-radius: 10px; cursor: pointer; }
-  .icon-btn:active { background: var(--line); }
+              border: 0; background: none; color: var(--ink-2); border-radius: 10px; cursor: pointer; }
+  .icon-btn:active { background: var(--panel); }
   .icon-btn svg { width: 20px; height: 20px; }
-  .refresh { display: none; }
-  @media (display-mode: standalone) { .refresh { display: inline-flex; } }
-  .tabs { display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px;
-          padding: 0 18px; -webkit-overflow-scrolling: touch; }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tabs a { flex: none; padding: 9px 0 11px; font-size: .82rem; font-weight: 600; color: var(--muted);
-            text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; }
-  .tabs a.active { color: var(--text); border-bottom-color: var(--accent); }
-  .tabs .count { font-weight: 500; color: var(--muted); margin-left: 3px; font-size: .75rem; }
+  .refresh { visibility: hidden; }
+  @media (display-mode: standalone) { .refresh { visibility: visible; } }
 
-  /* Typography */
-  .kicker { font: 700 .7rem/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .kicker { font: 700 .68rem/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
   .meta { color: var(--muted); font-size: .78rem; }
-  footer { margin: 48px 0 0; padding: 20px 0 calc(32px + var(--safe-bottom));
-           border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; line-height: 1.55; }
+  footer { margin: 44px 0 0; padding: 18px 0 calc(28px + var(--safe-bottom));
+           border-top: 1px solid var(--rule); color: var(--muted); font-size: .76rem; line-height: 1.55; }
   footer p { margin: 0 0 8px; }
-  .offline { display: none; margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; font-size: .8rem;
+  .offline { display: none; margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; font-size: .8rem;
              background: var(--alert-soft); color: var(--alert); }
   body.is-offline .offline { display: block; }
 </style>

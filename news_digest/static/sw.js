@@ -1,6 +1,6 @@
 // Offline support: always try the network first so each new edition shows up
 // right away, and fall back to the last saved copy when offline.
-const CACHE = "brief-v1";
+const CACHE = "brief-v2";
 const SHELL = ["./", "index.html", "archive.html", "manifest.webmanifest",
                "icon-192.png", "apple-touch-icon.png"];
 
