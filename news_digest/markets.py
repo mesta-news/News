@@ -53,6 +53,9 @@ def quotes(watchlist: list[dict], now: datetime) -> tuple[list[dict], str | None
             m1=_pct(last, vals[-22] if len(vals) > 21 else None),
             ytd=_pct(last, year_start),
             spark=vals[-66:],  # ~3 months
+            # ~1 year for the tap-to-enlarge chart: every other trading day, plus the last one
+            hist=[[d.strftime("%Y-%m-%d"), round(v, 4)] for d, v in
+                  list(zip(dates, vals))[-252::2] + ([(dates[-1], vals[-1])] if len(vals) % 2 == 0 else [])],
         )
         rows.append(row)
     if all(r["price"] is None for r in rows):

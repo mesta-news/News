@@ -147,7 +147,7 @@ sections:
 
     # Tiles: Dutch retail rates from the ECB's bank interest rate statistics (monthly)
     rates:
-      - { source: ecb, id: "MIR/M.NL.B.A2C.A.R.A.2250.EUR.N", name: "NL new mortgages", region: "Avg rate, new business · monthly" }
+      - { source: ecb, id: "MIR/M.NL.B.A2C.A.R.A.2250.EUR.N", name: "NL new mortgages", region: "Avg rate, new business · monthly", alert_bp: 10 }
       - { source: ecb, id: "MIR/M.NL.B.L22.F.R.A.2250.EUR.N", name: "NL term deposits ≤1y", region: "Households, new business · monthly" }
       - { source: ecb, id: "ICP/M.NL.N.000000.4.ANR",         name: "Dutch inflation",  region: "HICP, % y/y · monthly" }
 
@@ -325,17 +325,26 @@ sections:
       - { q: 'PS5 OR "PS5 Pro" OR "PlayStation 6" OR "Switch 2" OR Xbox console news', lang: en }
 
 # ---------------------------------------------------------------------------
+# Notifications ("only when something big happens")
+#   Price tiles alert on a one-day move of: 2% for indices, 4% for commodities,
+#   1.2% for currencies, 15% for the VIX and 5% for stocks. Override per tile
+#   with `alert: <percent>`. Rate tiles alert when `alert_bp:` is set and the
+#   rate moved at least that many basis points since the last edition.
+#   Claude also flags a tab as important on big news (see summarize.py).
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Key interest rates
 #   source: ecb   -> ECB Data Portal, id = "FLOW/KEY" (find series at
 #                    https://data.ecb.europa.eu, copy the series key)
 #   source: yahoo -> Yahoo Finance yield ticker (^TNX = US 10-year, etc.)
 # ---------------------------------------------------------------------------
 rates:
-  - { source: ecb,   id: "FM/D.U2.EUR.4F.KR.DFR.LEV",             name: "ECB deposit rate", region: "Eurozone · policy" }
+  - { source: ecb,   id: "FM/D.U2.EUR.4F.KR.DFR.LEV",             name: "ECB deposit rate", region: "Eurozone · policy", alert_bp: 1 }
   - { source: ecb,   id: "EST/B.EU000A2X2A25.WT",                  name: "€STR",             region: "Eurozone · overnight" }
   - { source: ecb,   id: "FM/M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",     name: "3M Euribor",       region: "Eurozone · monthly avg" }
-  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",     name: "2Y euro curve",    region: "AAA govt spot rate" }
-  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",    name: "10Y euro curve",   region: "AAA govt spot rate" }
+  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",     name: "2Y euro curve",    region: "AAA govt spot rate", alert_bp: 12 }
+  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",    name: "10Y euro curve",   region: "AAA govt spot rate", alert_bp: 12 }
   - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y",    name: "30Y euro curve",   region: "AAA govt spot rate" }
   - { source: ecb,   spread: ["YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"], name: "Euro 2s10s slope", region: "10Y minus 2Y, AAA curve" }
   - { source: ecb,   spread: ["YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"], name: "Euro 10s30s slope", region: "30Y minus 10Y, AAA curve" }
@@ -344,7 +353,7 @@ rates:
   - { source: ecb,   spread: ["IRS/M.NL.L.L40.CI.0000.EUR.N.Z", "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"], name: "NL–Bund 10Y spread", region: "Dutch minus German 10Y · monthly" }
   - { source: ecb,   spread: ["IRS/M.IT.L.L40.CI.0000.EUR.N.Z", "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"], name: "BTP–Bund 10Y spread", region: "Italian minus German 10Y · monthly" }
   - { source: yahoo, id: "^IRX",                                   name: "US 3-month bill",  region: "United States" }
-  - { source: yahoo, id: "^TNX",                                   name: "US 10-year",       region: "United States" }
+  - { source: yahoo, id: "^TNX",                                   name: "US 10-year",       region: "United States", alert_bp: 15 }
   - { source: yahoo, id: "^TYX",                                   name: "US 30-year",       region: "United States" }
 
 # ---------------------------------------------------------------------------
