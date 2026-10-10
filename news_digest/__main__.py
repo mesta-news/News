@@ -430,8 +430,9 @@ def _charts(d: dict) -> dict:
 
 
 def _articles(d: dict) -> dict:
-    """What the in-app reader shows for each story on the page, keyed by story id."""
-    out = {}
+    """What the in-app reader shows for each story on the page, keyed by story id.
+    `_refs` maps each section to the article ids behind each briefing bullet."""
+    out = {"_refs": {s["id"]: (s.get("briefing") or {}).get("summary_refs") or [] for s in d["sections"]}}
     for s in d["sections"]:
         for i in s["items"]:
             out.setdefault(i["id"], {k: v for k, v in {

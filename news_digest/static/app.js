@@ -260,9 +260,28 @@
 
   function host(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
 
+  function articleMode(on) {
+    reader.dataset.mode = on ? "article" : "topic";
+    $("r-star").hidden = $("r-share").hidden = !on;
+    $("r-rel-box").hidden = on;
+    $("r-sum-k").textContent = on ? "Summary" : "The story";
+    $("r-sum-foot").textContent = on ? "Written by Claude from the article. Check the source for details."
+                                     : "From Claude's briefing. Tap an article below for its summary and source.";
+    $("r-link").target = on ? "_blank" : "";
+  }
+
+  function showReader() {
+    if (!reader.open) {
+      reader.showModal();
+      if (!readerState) { history.pushState({ reader: true }, "", location.href); readerState = true; }
+    }
+    reader.scrollTop = 0;
+  }
+
   function openReader(id, list) {
     const a = articleFor(id);
     if (!a || !reader) return false;
+    articleMode(true);
     readingList = list || [id];
     readingAt = readingList.indexOf(id);
     reader.dataset.cat = a.sec || "";
@@ -287,14 +306,90 @@
     const nextId = readingList[readingAt + 1], next = nextId && articleFor(nextId);
     $("r-next").hidden = !next;
     if (next) $("r-next").innerHTML = `Next story<span>${esc(next.t)}</span>`;
-    if (!reader.open) {
-      reader.showModal();
-      if (!readerState) { history.pushState({ reader: true }, "", location.href); readerState = true; }
-    }
-    reader.scrollTop = 0;
+    showReader();
     learn(a.t, a.s);
     return true;
   }
+
+  // Tapping a summary point (a briefing bullet, an "In one minute" line or a Today card)
+  // opens it with the articles it is based on: Claude's own references when the edition
+  // has them, otherwise the articles of that tab that share the most words with it.
+  let topics = [], topicAt = -1;
+  const overlap = (a, b) => { const set = new Set(words(a)); return words(b).filter(w => set.has(w)).length; };
+
+  function related(sec, text, refs) {
+    const own = refs && refs.filter(id => ART[id]);
+    if (own && own.length) return { ids: own, exact: true };
+    const pool = Object.entries(ART).filter(([id, a]) => id !== "_refs" && a.sec === sec);
+    const scored = pool.map(([id, a]) => ({ id, score: overlap(text, a.t) + 0.6 * overlap(text, a.sum || "") + 0.6 * overlap(text, a.note || "") }))
+      .filter(x => x.score >= 2.4).sort((x, y) => y.score - x.score).slice(0, 5).map(x => x.id);
+    if (scored.length) return { ids: scored, exact: false };
+    // Nothing shares enough words (e.g. an English point about Dutch articles): show the tab's top stories.
+    return { ids: pool.filter(([, a]) => a.note || a.sum).slice(0, 4).map(([id]) => id), exact: false, fallback: true };
+  }
+
+  function bulletsOf(sec) {
+    const lis = [...document.querySelectorAll(`#tab-${sec} > .brief > ul > li`)];
+    const refs = (ART._refs || {})[sec] || [];
+    return lis.map((li, i) => ({ sec, li, text: li.textContent.trim(), lead: li.querySelector("strong")?.textContent.trim() || "", refs: refs[i] || [] }));
+  }
+
+  function openTopic(list, at) {
+    const t = list[at];
+    if (!t || !reader) return false;
+    topics = list; topicAt = at;
+    articleMode(false);
+    reader.dataset.cat = t.sec;
+    $("r-sec").textContent = label(t.sec);
+    let title = t.lead.replace(/[.:]$/, ""), body = t.text;
+    if (title) body = t.text.slice(t.text.indexOf(t.lead) + t.lead.length).replace(/^[\s.:–—-]+/, "").replace(/ ›$/, "");
+    else { const m = t.text.match(/^(.+?[.!?])\s+(.*)$/s); title = m ? m[1] : t.text; body = m ? m[2] : ""; }
+    $("r-title").textContent = title;
+    $("r-meta").textContent = t.where || `From the ${label(t.sec)} briefing`;
+    $("r-img").hidden = true;
+    $("r-sum").textContent = body;
+    $("r-sum-box").hidden = !body;
+    $("r-note-box").hidden = true;
+    $("r-snip-box").hidden = true;
+    const rel = related(t.sec, t.text, t.refs), ids = rel.ids;
+    $("r-rel-box").querySelector(".kicker").textContent = rel.exact ? "The articles behind it"
+      : rel.fallback ? `Top stories in ${label(t.sec)}` : "Related articles";
+    $("r-rel").innerHTML = ids.map(id => { const a = ART[id];
+      return `<li data-rel="${esc(id)}"><div class="src">${esc(a.s || "")}</div><a class="hl" href="${esc(a.l)}">${esc(a.t)}</a>
+        <div class="meta">${esc(shortDate(a.d))}${a.sum ? " · summary available" : ""}</div></li>`; }).join("");
+    $("r-rel-box").hidden = !ids.length;
+    $("r-link").href = `#${t.sec}`;
+    $("r-link").textContent = `Open the ${label(t.sec)} tab`;
+    const next = list[at + 1];
+    $("r-next").hidden = !next;
+    if (next) $("r-next").innerHTML = `Next point<span>${esc((next.lead || next.text).replace(/ ›$/, "").slice(0, 120))}</span>`;
+    showReader();
+    return true;
+  }
+
+  document.addEventListener("click", e => {
+    if (e.defaultPrevented || e.target.closest("dialog, a, button")) return;
+    const bullet = e.target.closest(".panel > .brief > ul > li");
+    const minute = !bullet && e.target.closest(".minute li[data-cat]");
+    const stand = !bullet && !minute && e.target.closest(".card .standfirst");
+    if (bullet) {
+      const sec = bullet.closest(".panel").dataset.panel;
+      const list = sec === "week" ? [...bullet.parentElement.children].map(li => ({ sec: li.closest("[data-cat]")?.dataset.cat, li, text: li.textContent.trim(),
+        lead: li.querySelector("strong")?.textContent.trim() || "", refs: [], where: "From the week in review" })) : bulletsOf(sec);
+      const at = list.findIndex(t => t.li === bullet);
+      if (at >= 0 && openTopic(list, at)) e.preventDefault();
+    } else if (minute) {
+      const items = [...minute.parentElement.querySelectorAll(":scope > li[data-cat]")].map(li => {
+        const sec = li.dataset.cat, text = li.querySelector("p")?.textContent.trim() || li.textContent.trim();
+        const best = bulletsOf(sec).map(b => ({ b, n: overlap(text, b.text) })).sort((x, y) => y.n - x.n)[0];
+        return { sec, li, text, lead: "", refs: best && best.n >= 2 ? best.b.refs : [], where: "In one minute" };
+      });
+      openTopic(items, items.findIndex(t => t.li === minute));
+    } else if (stand) {
+      const sec = stand.closest(".card").dataset.cat, list = bulletsOf(sec);
+      if (list.length) openTopic(list, 0);
+    }
+  });
 
   function closeReader(fromHistory) {
     if (!reader?.open) return;
@@ -316,7 +411,21 @@
   $("r-back")?.addEventListener("click", () => closeReader());
   reader?.addEventListener("cancel", e => { e.preventDefault(); closeReader(); });
   addEventListener("popstate", () => closeReader(true));
-  $("r-next")?.addEventListener("click", () => openReader(readingList[readingAt + 1], readingList));
+  $("r-next")?.addEventListener("click", () => reader.dataset.mode === "topic"
+    ? openTopic(topics, topicAt + 1) : openReader(readingList[readingAt + 1], readingList));
+  $("r-rel")?.addEventListener("click", e => {
+    const li = e.target.closest("li[data-rel]");
+    if (!li) return;
+    e.preventDefault();
+    openReader(li.dataset.rel, [...$("r-rel").children].map(x => x.dataset.rel));
+  });
+  $("r-link")?.addEventListener("click", e => {
+    if (reader.dataset.mode !== "topic") return;
+    e.preventDefault();
+    const sec = topics[topicAt]?.sec;
+    closeReader();
+    if (sec) setTimeout(() => { location.hash = sec; }, 50);
+  });
   $("r-star")?.addEventListener("click", () => {
     const a = articleFor(readingList[readingAt]);
     if (!a) return;
