@@ -108,6 +108,14 @@ def _thin(values: list[float], points: int = 60) -> list[float]:
     return values[::step] + ([values[-1]] if values and (len(values) - 1) % step else [])
 
 
+def _thin_pairs(points: list[tuple[str, float]], n: int = 130) -> list[list]:
+    step = max(1, len(points) // n)
+    out = [list(p) for p in points[::step]]
+    if points and out[-1][0] != points[-1][0]:
+        out.append(list(points[-1]))
+    return out
+
+
 def _bp(new: float, old: float | None) -> float | None:
     return None if old is None else round((new - old) * 100)
 
@@ -147,6 +155,8 @@ def fetch(defs: list[dict]) -> tuple[list[dict], str | None]:
             m1=_bp(last, _value_on_or_before(series, last_day - timedelta(days=30))),
             y1=_bp(last, _value_on_or_before(series, last_day - timedelta(days=365))),
             spark=_thin([v for d_, v in series if d_ >= last_day - timedelta(days=365)]),
+            hist=_thin_pairs([(d_.isoformat(), round(v, 4)) for d_, v in series
+                              if d_ >= last_day - timedelta(days=365)]),
         )
         return row
 
