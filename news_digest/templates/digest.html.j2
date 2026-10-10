@@ -8,9 +8,11 @@
   {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[0] }}; }
   {% endfor %}
   @media (prefers-color-scheme: dark) {
-    {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[1] or s.color[0] }}; }
+    {% for s in d.sections if s.color %}:root:not([data-theme="light"]) [data-cat="{{ s.id }}"] { --cat: {{ s.color[1] or s.color[0] }}; }
     {% endfor %}
   }
+  {% for s in d.sections if s.color %}:root[data-theme="dark"] [data-cat="{{ s.id }}"] { --cat: {{ s.color[1] or s.color[0] }}; }
+  {% endfor %}
   .panel-head > .kicker, .card > .kicker, .minute li > .kicker a { color: var(--cat, var(--teal)); }
 
   /* Section tabs */
@@ -204,6 +206,22 @@
   .notify .modes label.choice { align-items: flex-start; font-size: .86rem; }
   .notify .modes input { margin-top: 2px; flex: none; }
 
+  /* Settings */
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+             padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .set-label { font: 700 .72rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--panel); }
+  .seg label { position: relative; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 34px; padding: 0 10px;
+              border-radius: 8px; font-size: .86rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+  .seg input:checked + span { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+  .seg input:focus-visible + span { outline: 2px solid var(--claret); }
+  .set-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0;
+                border-bottom: 1px solid var(--rule); font-size: .9rem; cursor: pointer; }
+  .set-toggle input { flex: none; width: 20px; height: 20px; accent-color: var(--claret); }
+  .tabs a.tab-hidden { display: none; }
+
   /* Tap a tile: 1-year chart */
   .tile[data-chart] { cursor: zoom-in; }
   dialog.chart-dlg { width: min(720px, calc(100vw - 24px)); padding: 16px 18px 14px; border: 0; border-radius: 14px;
@@ -266,8 +284,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         </button>
         {% endif %}
-        <button class="icon-btn refresh" type="button" aria-label="Refresh" onclick="location.reload()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        <button class="icon-btn" id="settings-btn" type="button" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
     </div>
@@ -535,6 +553,42 @@
   </footer>
 </main>
 
+<dialog class="notify settings" id="settings" aria-labelledby="settings-title">
+  <h3 id="settings-title">Settings</h3>
+  <p>Saved on this phone only.</p>
+  <div class="set-row"><span class="set-label">Theme</span>
+    <div class="seg" role="radiogroup" aria-label="Theme">
+      <label><input type="radio" name="set-theme" value="system"><span>System</span></label>
+      <label><input type="radio" name="set-theme" value="light"><span>Light</span></label>
+      <label><input type="radio" name="set-theme" value="dark"><span>Dark</span></label>
+    </div></div>
+  <div class="set-row"><span class="set-label">Text size</span>
+    <div class="seg" role="radiogroup" aria-label="Text size">
+      <label><input type="radio" name="set-size" value="90"><span style="font-size:.8rem">A</span></label>
+      <label><input type="radio" name="set-size" value="100"><span style="font-size:.95rem">A</span></label>
+      <label><input type="radio" name="set-size" value="112"><span style="font-size:1.1rem">A</span></label>
+      <label><input type="radio" name="set-size" value="125"><span style="font-size:1.25rem">A</span></label>
+    </div></div>
+  <div class="set-row"><span class="set-label">Open on</span>
+    <div class="seg" role="radiogroup" aria-label="Open on">
+      <label><input type="radio" name="set-start" value="last"><span>Last tab</span></label>
+      <label><input type="radio" name="set-start" value="today"><span>Today</span></label>
+    </div></div>
+  <label class="set-toggle"><span>Scrolling price ticker</span><input type="checkbox" id="set-ticker"></label>
+  <label class="set-toggle"><span>"For you": move stories like the ones I open to the top</span><input type="checkbox" id="set-foryou"></label>
+  <div class="set-label" style="margin-top:14px">Tabs to show</div>
+  <div class="choices" id="set-tabs">
+    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.emoji }} {{ s.short or s.title }}</span></label>
+    {% endfor %}
+  </div>
+  <div class="row">
+    <button class="btn" type="button" id="settings-done">Done</button>
+    {% if vapid_public_key %}<button class="btn ghost" type="button" id="settings-notify">Notifications…</button>{% endif %}
+    <button class="btn ghost" type="button" onclick="location.reload()">Reload</button>
+  </div>
+  <p class="meta" style="margin-top:12px"><a href="#" id="settings-reset">Reset all settings</a></p>
+</dialog>
+
 <dialog class="chart-dlg" id="chart-dlg" aria-labelledby="chart-title">
   <div class="chart-head"><div><div class="kicker" id="chart-sub"></div><h3 id="chart-title"></h3></div>
     <button class="icon-btn" type="button" id="chart-close" aria-label="Close">✕</button></div>
@@ -683,8 +737,14 @@
   // Tabs: show one section at a time, remember the last one per device, swipe to switch.
   (() => {
     const KEY = "brief-tab";
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem("brief-settings") || "{}"); } catch (e) {}
+    const hidden = settings.hidden || [];
+    document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("tab-hidden", hidden.includes(a.dataset.tab)));
+    document.querySelectorAll(".card[data-cat], .minute li[data-cat]").forEach(el => el.hidden = hidden.includes(el.dataset.cat));
     const panels = [...document.querySelectorAll(".panel")];
-    const ids = panels.filter(p => !("extra" in p.dataset)).map(p => p.dataset.panel);  // swipe/arrow order
+    const ids = panels.filter(p => !("extra" in p.dataset) && !hidden.includes(p.dataset.panel))
+                      .map(p => p.dataset.panel);  // swipe/arrow order (tabs hidden in Settings are skipped)
     const allIds = panels.map(p => p.dataset.panel);
     const tabs = [...document.querySelectorAll(".tabs a")];
     const nav = document.querySelector(".tabs");
@@ -745,13 +805,16 @@
 
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch (e) {}
+    if (settings.start === "today" || hidden.includes(saved)) saved = null;
     show(location.hash.slice(1) || saved || "today", { save: false });
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
     // Ticker: scroll slowly from right to left in a loop. It pauses while touched,
     // hovered or focused, so prices stay easy to tap and can still be swiped by hand.
     const row = document.querySelector(".ticker-row");
-    if (row && row.children.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let tickerOff = false;
+    try { tickerOff = JSON.parse(localStorage.getItem("brief-settings") || "{}").ticker === false; } catch (e) {}
+    if (row && row.children.length && !tickerOff && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const originals = [...row.children];
       originals.forEach(n => {
         const copy = n.cloneNode(true);

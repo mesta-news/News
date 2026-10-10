@@ -35,6 +35,13 @@ also have it emailed to you.
 * **For you**: the stories you open teach the app which topics and sources you like; up to two matching stories per tab move to the top. Stored on each phone only; reset in the footer.
 * **Charts**: tap a price or rate tile for a 1-year chart; drag across it to read values.
 
+## Settings
+
+The ⚙️ icon opens per-phone settings: theme (System, Light, Dark), text size,
+which tabs to show (hidden tabs also leave the Today page and the swipe order),
+open on the last tab or Today, the scrolling ticker, and the "For you" ranking.
+They are stored on the phone and applied before the page is drawn.
+
 ## Notifications
 
 Each tab has its own colour (set with `color:` in `config.yaml`), and the app can
