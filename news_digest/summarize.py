@@ -24,6 +24,12 @@ SECTION_SCHEMA = {
         "summary": {"type": "array", "items": {"type": "string"}},
         "for_you": {"type": "array", "items": {"type": "string"}},
         "on_radar": {"type": "array", "items": {"type": "string"}},
+        "alert": {
+            "type": "object",
+            "properties": {"important": {"type": "boolean"}, "headline": {"type": "string"}},
+            "required": ["important", "headline"],
+            "additionalProperties": False,
+        },
         "explainer": {
             "type": "object",
             "properties": {"title": {"type": "string"}, "text": {"type": "string"}},
@@ -40,9 +46,44 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "for_you", "on_radar", "explainer", "highlights"],
+    "required": ["summary", "for_you", "on_radar", "alert", "explainer", "highlights"],
     "additionalProperties": False,
 }
+
+def weekly_schema(section_ids: list[str]) -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "overview": {"type": "array", "items": {"type": "string"}},
+            "tabs": {"type": "array", "items": {
+                "type": "object",
+                "properties": {"section": {"type": "string", "enum": section_ids},
+                               "bullets": {"type": "array", "items": {"type": "string"}}},
+                "required": ["section", "bullets"],
+                "additionalProperties": False,
+            }},
+        },
+        "required": ["overview", "tabs"],
+        "additionalProperties": False,
+    }
+
+
+# What counts as "important" for a tab's notification. Most days nothing does.
+ALERT_RULES = {
+    "careers": "a target employer (CRO, pharma, biotech in the Netherlands) announces a hiring wave, a new site or big layoffs; a material change to BIG registration rules",
+    "research": "an EMA/CHMP decision or a new EU/Dutch clinical-trial rule taking effect",
+    "medicine": "a practice-changing trial result or major approval in a big therapeutic area",
+    "banking": "a DNB/ECB/EBA decision affecting Dutch banks, a big Dutch bank result or rate change, a major housing/mortgage data surprise",
+    "rates": "a central bank decision (ECB, Fed, BoE) or a large move in euro yields",
+    "watchlist": "earnings or guidance from a watchlist company, or a large market move",
+    "energy": "a large oil or gas price move, an OPEC+ decision, a supply disruption",
+    "business": "a market-moving macro event or very large deal",
+    "world": "a major event in the Netherlands, Morocco or the world (election result, big disaster, war escalation)",
+    "ai": "a major new model release or capability from a leading lab",
+    "technology": "a major product launch or a very good deal on a big-ticket item",
+    "gaming": "news on GTA 6 (date, trailer, delay), a new Gran Turismo 7 update, Age of Empires expansion, Ghost of Yotei/Tsushima or a Cyberpunk/Red Dead announcement",
+}
+
 
 def top_schema(section_ids: list[str]) -> dict:
     return {
@@ -199,6 +240,7 @@ Rules:
 - "summary": a list of 2-6 bullet points (one string each, markdown allowed, no leading dash) with the most important developments. Start each with a short **bold lead-in** (3-7 words), then at most two short sentences. If nothing meaningful happened, say so in one bullet.
 - "for_you": 0-3 concrete takeaways or actions for us, based on the profile, one sentence each (empty list if none).
 - "on_radar": 0-4 upcoming events with a date that the articles or data mention (central bank meetings, data releases, earnings, auctions, regulatory deadlines, conferences), each starting with the date, e.g. "23 Oct: ECB rate decision". Never guess a date; empty list if none.
+- "alert": set "important" to true only when something today is big enough to interrupt the reader with a phone notification ({alert_rule}). Most days it is false. "headline" is one plain sentence (max 18 words) saying what happened; empty when not important.
 - "explainer": when one development needs background to be understood, a short explainer: "title" (a question, e.g. "Why does the 10s30s slope matter?") and "text" (80-140 words, plain language, using only the provided articles and data plus well-established general knowledge, no new news facts). Empty strings when nothing needs explaining.
 - If "previous_briefing" is given, it is what this section said in the last edition: don't repeat it; say when something is a follow-up ("update:", "as expected", "reversal") and what changed.
 - "highlights": up to 6 of the most useful articles, by their id, each with a note of at most 20 words on why it matters to us.
@@ -307,6 +349,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
         return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [],
+                "alert": {"important": False, "headline": ""},
                 "explainer": {"title": "", "text": ""}, "highlights": []}
 
     payload = {
@@ -339,7 +382,8 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
         ]
 
     system = (
-        INSTRUCTIONS.format(language=cfg.get("language", "English"))
+        INSTRUCTIONS.format(language=cfg.get("language", "English"),
+                            alert_rule=ALERT_RULES.get(section["id"], "a major development"))
         + "\nSection focus: " + SECTION_FOCUS.get(section["id"], "")
         + "\n\nReader profile:\n" + profile(cfg)
     )
@@ -369,3 +413,31 @@ def top_briefing(client, cfg: dict, sections: list[dict]) -> list[dict]:
     user = json.dumps(summaries, ensure_ascii=False, indent=1)
     out = _call(client, cfg, system, user, top_schema(list(summaries)))
     return out["bullets"] if out else []
+
+
+def weekly_review(client, cfg: dict, sections: list[dict], history: list[dict]) -> dict | None:
+    """'The week in review' for weekend editions, from this week's saved briefings."""
+    days = {}
+    for d in [{"date": "today", "sections": sections}] + history:
+        for sec in d.get("sections", []):
+            text = (sec.get("briefing") or {}).get("summary")
+            if text and "nothing new" not in text.lower()[:40]:
+                days.setdefault(sec["id"], {"title": sec["title"], "days": []})["days"].append(
+                    {"date": d["date"], "summary": text})
+    if not days:
+        return None
+    system = (
+        f"You write 'The week in review' for a private news brief, in {cfg.get('language', 'English')}. "
+        "You get each tab's daily briefings from the past week. For each tab with real news, write "
+        "2-4 bullets on what mattered this week: the developments that lasted, how stories evolved "
+        "(e.g. rumour to confirmation, rate expectations shifting), and what to watch next week. "
+        "Start each bullet with a short **bold lead-in**. Skip tabs where nothing meaningful "
+        "happened. Also write an `overview` of 3-5 one-sentence bullets: the week's biggest "
+        "stories across all tabs for these two readers. Use only the briefings given."
+        "\n\nReader profile:\n" + profile(cfg)
+    )
+    out = _call(client, cfg, system, json.dumps(days, ensure_ascii=False, indent=1), weekly_schema(list(days)))
+    if not out:
+        return None
+    return {"overview": out["overview"],
+            "tabs": {t["section"]: t["bullets"] for t in out["tabs"] if t["bullets"]}}

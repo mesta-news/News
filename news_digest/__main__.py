@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import shutil
+from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,7 +25,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import icons, markets, pages, push, rates, sources, summarize
+from . import alerts, icons, markets, pages, push, rates, sources, summarize
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -64,16 +65,29 @@ def _balance(items: list[dict], groups: list[str] | None) -> list[dict]:
     return out + rest
 
 
-def _previous_summaries(data_dir: Path | None, today: str) -> dict[str, str]:
-    """Each section's briefing from the last earlier edition, so Claude can follow up."""
+def _editions(data_dir: Path | None, before: str, days: int) -> list[dict]:
+    """Saved editions dated before `before`, newest first (at most `days` of them)."""
     if not data_dir:
-        return {}
+        return []
+    out = []
     for f in sorted(data_dir.glob("*.json"), reverse=True):
-        if f.stem < today:
-            d = load_json(f, {})
-            return {s["id"]: s["briefing"]["summary"] for s in d.get("sections", [])
-                    if (s.get("briefing") or {}).get("summary")}
-    return {}
+        if f.stem < before and len(out) < days:
+            d = load_json(f, None)
+            if d:
+                out.append(d)
+    return out
+
+
+def _previous_summaries(previous: dict | None) -> dict[str, str]:
+    """Each section's briefing from the last earlier edition, so Claude can follow up."""
+    return {s["id"]: s["briefing"]["summary"] for s in (previous or {}).get("sections", [])
+            if (s.get("briefing") or {}).get("summary")}
+
+
+def _previous_rates(previous: dict | None) -> dict[str, dict[str, float]]:
+    """section id -> {rate name: value} from the last edition, for change alerts."""
+    return {s["id"]: {r["name"]: r["value"] for r in s.get("rates") or [] if r.get("value") is not None}
+            for s in (previous or {}).get("sections", [])}
 
 
 def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None) -> dict:
@@ -81,6 +95,8 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
     today = now.astimezone(TZ).date().isoformat()
 
     seen_path, pages_path = state_dir / "seen.json", state_dir / "pages.json"
+    history = _editions(data_dir, today, 7)  # the past week, newest first
+    previous = history[0] if history else None
     seen: dict[str, str] = load_json(seen_path, {})
     page_state: dict = load_json(pages_path, {})
     watchlist = cfg.get("watchlist") or []
@@ -114,22 +130,26 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
         if sec_cfg.get("rates_label"):
             sec["rates_label"] = sec_cfg["rates_label"]
         sec["pages"] = pages.check(sec_cfg.get("watch_pages") or [], page_state, today)
+        sec["alerts"] = []
         if instruments(sec_cfg):
             sec["quotes"], err = markets.quotes(instruments(sec_cfg), now.astimezone(TZ))
             if err:
                 sec["errors"].append(err)
+            sec["alerts"] += alerts.market_alerts(sec["quotes"], instruments(sec_cfg))
         # Rate tiles: a section's own `rates:` list, or the global one for the rates tab.
         rate_defs = sec_cfg.get("rates") or (cfg.get("rates") if sec["id"] == "rates" else None)
         if rate_defs:
             sec["rates"], err = rates.fetch(rate_defs)
             if err:
                 sec["errors"].append(err)
+            sec["alerts"] += alerts.rate_alerts(sec["rates"], rate_defs,
+                                                _previous_rates(previous).get(sec["id"], {}))
         sec["new_count"] = sum(1 for i in sec["items"] if i["is_new"])
 
-    previous = _previous_summaries(data_dir, today)
+    earlier = _previous_summaries(previous)
     for sec in sections:
-        if sec["id"] in previous:
-            sec["previous_briefing"] = previous[sec["id"]]
+        if sec["id"] in earlier:
+            sec["previous_briefing"] = earlier[sec["id"]]
 
     client = summarize._client() if use_ai else None
     top: list[str] = []
@@ -147,6 +167,9 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
                 it["note"] = notes.get(it["id"], "")
             # Put the highlighted articles first (sort is stable, so ranking is kept).
             sec["items"].sort(key=lambda i: not i["note"])
+            alert = brief.get("alert") or {}
+            if alert.get("important") and alert.get("headline"):
+                sec["alerts"].insert(0, alert["headline"])
         top = summarize.top_briefing(client, cfg, sections)
     elif use_ai:
         log.info("No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY - skipping AI summaries")
@@ -161,12 +184,19 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
     save_json(pages_path, page_state)
 
     local = now.astimezone(TZ)
+    weekly = None
+    if client and local.weekday() >= 5:  # Saturday and Sunday
+        weekly = summarize.weekly_review(client, cfg, sections, history[:6])
+        if weekly:
+            first = (history[:6] or [{"date": today}])[-1]["date"]
+            weekly["range"] = f"{datetime.fromisoformat(first):%-d %b} – {local:%-d %b %Y}"
     return {
         "date": today,
         "date_label": local.strftime("%A %d %B %Y"),
         "generated_label": local.strftime("%H:%M %Z"),
         "ai": bool(client),
         "top": top,
+        "weekly": weekly,
         "sections": sections,
     }
 
@@ -279,12 +309,55 @@ def _agenda(d: dict, limit: int = 12) -> list[dict]:
     return events[:limit]
 
 
+def tile_slug(sec: str, x: dict) -> str:
+    """Stable element id for a price/rate tile (ticker links and charts use it)."""
+    key = str(x.get("symbol") or x.get("id") or x.get("name") or "").lower()
+    for ch in "^=./ ":
+        key = key.replace(ch, "")
+    return f"t-{sec}-{key if len(key) <= 45 else key[:40]}"
+
+
+def _charts(d: dict) -> dict:
+    """1-year series for each tile, keyed by tile id, for the tap-to-enlarge chart."""
+    out = {}
+    for s in d["sections"]:
+        for q in s.get("quotes") or []:
+            if q.get("hist"):
+                out[tile_slug(s["id"], q)] = {
+                    "name": q["name"], "sub": q["symbol"] + (f" · {q['unit']}" if q.get("unit") else ""),
+                    "kind": "price", "points": q["hist"],
+                    "url": f"https://finance.yahoo.com/quote/{quote(q['symbol'])}"}
+        for r in s.get("rates") or []:
+            if r.get("hist"):
+                out[tile_slug(s["id"], r)] = {
+                    "name": r["name"], "sub": r.get("region", ""), "points": r["hist"],
+                    "kind": "bp" if r.get("unit") == "bp" else "pct", "url": r.get("url", "")}
+    return out
+
+
+def _search_index(digests: list[dict]) -> dict:
+    """Compact index of the last 90 days for the in-app search (search.json)."""
+    sections, items, briefs, seen_links = {}, [], [], set()
+    for d in digests:
+        for s in d["sections"]:
+            sections.setdefault(s["id"], s.get("short") or s["title"])
+            for i in s["items"]:
+                if i.get("is_new") and i["link"] not in seen_links:
+                    seen_links.add(i["link"])
+                    items.append([d["date"], s["id"], i["title"], i["sources"][0] if i["sources"] else "", i["link"]])
+            text = (s.get("briefing") or {}).get("summary")
+            if text:
+                briefs.append([d["date"], s["id"], text.replace("**", "")])
+    return {"sections": sections, "items": items, "briefs": briefs}
+
+
 def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
                        bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
                        agenda=_agenda)
+    env.globals["tile_slug"] = tile_slug
     return env
 
 
@@ -304,7 +377,7 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
     key = push.private_key()
     env.globals["vapid_public_key"] = push.public_key_b64(key) if key else ""
     files = sorted(data_dir.glob("*.json"), reverse=True)[:SITE_DAYS]
-    entries, index_html = [], ""
+    entries, index_html, digests = [], "", []
     page = env.get_template("digest.html.j2")
     for f in files:
         d = load_json(f, None)
@@ -313,13 +386,16 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
         for s in d["sections"]:
             s.update({k: style[s["id"]][k] for k in ("emoji", "color")
                       if s["id"] in style and style[s["id"]].get(k)})
-        out = page.render(d=d)
+        digests.append(d)
+        out = page.render(d=d, charts=_charts(d))
         (out_dir / f"{d['date']}.html").write_text(out)
         if not index_html:
             index_html = out
         entries.append({"date": d["date"], "label": d["date_label"],
                         "new_count": sum(s.get("new_count", 0) for s in d["sections"])})
     (out_dir / "index.html").write_text(index_html or "<p>No digest yet.</p>")
+    (out_dir / "search.json").write_text(json.dumps(_search_index(digests), ensure_ascii=False,
+                                                    separators=(",", ":")))
     (out_dir / "archive.html").write_text(
         env.get_template("archive.html.j2").render(entries=entries))
     return index_html
