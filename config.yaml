@@ -55,13 +55,16 @@ sections:
       - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl }
       - { q: 'artsen "buiten de EU" OR "van buiten Europa" erkenning diploma', lang: nl }
       - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en }
-      - { q: 'site:medischcontact.nl buitenlandse artsen OR BIG', lang: nl }
+      - { q: 'site:medischcontact.nl "buitenlandse artsen"', lang: nl }
+      - { q: 'site:medischcontact.nl "BIG-register"', lang: nl }
+    # Only keep articles that mention one of these (case-insensitive).
+    keywords: [big-regist, big regist, "big-registratie", buitenland, foreign, diploma,
+               akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets]
     watch_pages:
       # Official sources. If a URL stops working the digest will say so -
       # just update it here.
       - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
       - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
-      - { name: "BIG-register - buitenlands diploma", url: "https://www.bigregister.nl/registratie/buitenlands-diploma" }
 
   - id: jobs
     title: "Dutch healthcare job market"
@@ -72,7 +75,7 @@ sections:
       - { q: 'arbeidsmarkt zorg OR "personeelstekort zorg" OR "tekort aan artsen"', lang: nl }
       - { q: 'ANIOS OR "arts niet in opleiding" OR basisarts vacatures OR opleidingsplaatsen', lang: nl }
       - { q: 'cao ziekenhuizen OR "cao umc" OR huisartsentekort', lang: nl }
-      - { q: 'site:medischcontact.nl arbeidsmarkt OR vacature OR opleiding', lang: nl }
+      - { q: 'site:medischcontact.nl arbeidsmarkt', lang: nl }
       - { q: 'site:skipr.nl OR site:zorgvisie.nl arbeidsmarkt', lang: nl }
       - { q: 'Netherlands healthcare staff shortage doctors jobs', lang: en }
 
