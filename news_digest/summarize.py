@@ -124,10 +124,13 @@ def _call_cli(cfg: dict, system: str, user: str, schema: dict) -> dict | None:
         "--setting-sources", "",
         "--no-session-persistence",
     ]
+    env = dict(os.environ)
+    # Tokens copied from a narrow terminal often pick up line breaks; tokens never contain whitespace.
+    env["CLAUDE_CODE_OAUTH_TOKEN"] = "".join(env.get("CLAUDE_CODE_OAUTH_TOKEN", "").split())
     try:
         with tempfile.TemporaryDirectory() as tmp:
             proc = subprocess.run(cmd, input=user, capture_output=True, text=True,
-                                  timeout=CLI_TIMEOUT, cwd=tmp)
+                                  timeout=CLI_TIMEOUT, cwd=tmp, env=env)
     except subprocess.TimeoutExpired:
         log.warning("claude CLI timed out")
         return None
