@@ -23,6 +23,7 @@ SECTION_SCHEMA = {
     "properties": {
         "summary": {"type": "array", "items": {"type": "string"}},
         "for_you": {"type": "array", "items": {"type": "string"}},
+        "on_radar": {"type": "array", "items": {"type": "string"}},
         "highlights": {
             "type": "array",
             "items": {
@@ -33,7 +34,7 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "for_you", "highlights"],
+    "required": ["summary", "for_you", "on_radar", "highlights"],
     "additionalProperties": False,
 }
 
@@ -60,7 +61,21 @@ SECTION_FOCUS = {
         "around Utrecht, Leiden and Amsterdam); demand for CRAs, clinical operations, "
         "medical affairs, medical information, MSLs, pharmacovigilance and medical "
         "training roles; language expectations (English vs Dutch). Name the company "
-        "and location. Suggest concrete next steps when there is an opening."
+        "and location. Suggest concrete next steps when there is an opening. "
+        "Some articles are about the BIG register and diploma recognition: she is "
+        "not pursuing BIG registration now, so mention those only for material "
+        "changes (law, CIBG/CBGV procedure, AKV/BI-toets, language rules, waiting "
+        "times), saying whether they are decided, proposed or only discussed."
+    ),
+    "medicine": (
+        "Write for a physician working toward medical affairs or clinical research. "
+        "Cover the most important new research: major trial readouts, journal "
+        "papers (NEJM, Lancet, BMJ, JAMA, Nature Medicine), approvals and "
+        "recommendations (FDA, EMA/CHMP), guideline changes. For each, give the "
+        "therapeutic area, the design when known (phase, randomised or "
+        "observational, size), the main result and why it matters clinically. Flag "
+        "preliminary results (press releases, preprints, abstracts) as such. Point "
+        "out anything worth discussing in a medical affairs or MSL interview."
     ),
     "research": (
         "Focus on the knowledge an aspiring CRA / medical affairs professional should "
@@ -104,8 +119,8 @@ SECTION_FOCUS = {
     "rates": (
         "Cover central-bank decisions, meetings and guidance (ECB, Fed, Bank of "
         "England, Bank of Japan, PBoC, SNB and others), inflation data that moves "
-        "rate expectations, and bond yields. Use the key_rates figures (in percent; "
-        "changes in basis points) to say what actually moved. Separate decisions "
+        "rate expectations, and bond yields. Use the key_rates figures (in percent, or "
+        "basis points where unit is bp; changes in basis points) to say what actually moved. Separate decisions "
         "from expectations. Explain what it means for us in the Netherlands: "
         "mortgage rates, savings rates, the euro, and a Dutch bank's balance sheet."
     ),
@@ -125,6 +140,7 @@ Rules:
 - Write like a good newspaper briefing: plain, precise, no filler or hedging boilerplate.
 - "summary": a list of 2-5 bullet points (one string each, markdown allowed, no leading dash) with the most important developments. Start each with a short **bold lead-in** (3-7 words), then at most two short sentences. If nothing meaningful happened, say so in one bullet.
 - "for_you": 0-3 concrete takeaways or actions for us, based on the profile, one sentence each (empty list if none).
+- "on_radar": 0-4 upcoming events with a date that the articles or data mention (central bank meetings, data releases, earnings, auctions, regulatory deadlines, conferences), each starting with the date, e.g. "23 Oct: ECB rate decision". Never guess a date; empty list if none.
 - "highlights": up to 6 of the most useful articles, by their id, each with a note of at most 20 words on why it matters to us.
 """
 
@@ -230,7 +246,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_quotes = any(q.get("price") is not None for q in section.get("quotes") or [])
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
-        return {"summary": "- Nothing new since the last digest.", "for_you": [], "highlights": []}
+        return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [], "highlights": []}
 
     payload = {
         "section": section["title"],

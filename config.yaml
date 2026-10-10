@@ -12,7 +12,7 @@ profile: |
     clinical research and life sciences in the Netherlands (CRA, clinical
     operations, medical affairs, medical information, pharmacovigilance). She
     is not pursuing BIG registration for now. Her tabs: Careers, Clinical
-    research, BIG.
+    research, Medicine.
   - He is a financial risk manager specialised in asset-liability management
     (ALM) at a Dutch retail bank (mortgages and savings), and builds software
     with AI. His tabs: Banking, Rates, Markets, Business, AI.
@@ -40,7 +40,7 @@ seen_retention_days: 60
 # ---------------------------------------------------------------------------
 sections:
   - id: careers
-    title: "Clinical research & pharma careers"
+    title: "Careers, jobs & registration"
     short: "Careers"
     max_age_days: 7
     max_items: 15
@@ -54,6 +54,15 @@ sections:
       # Roles she is targeting
       - { q: '"clinical research associate" OR "medical affairs" OR "medical science liaison" OR pharmacovigilance careers', lang: en }
       - { q: 'Holland Bio OR "Health~Holland" OR "life sciences" Nederland arbeidsmarkt', lang: nl }
+      # BIG register & diploma recognition (kept in case she reconsiders):
+      # only articles that mention one of the keywords, from the last 3 weeks.
+      - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl, max_age_days: 21, keywords: [big-regist, big regist, big-registratie, buitenland, foreign, diploma, akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets] }
+      - { q: '"buitenlandse artsen" OR "buitenlands gediplomeerde" OR "buitenlands diploma" zorg', lang: nl, max_age_days: 21, keywords: [big-regist, big regist, big-registratie, buitenland, foreign, diploma, akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets] }
+      - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl, max_age_days: 21, keywords: [big-regist, big regist, big-registratie, buitenland, foreign, diploma, akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets] }
+      - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en, max_age_days: 21, keywords: [big-regist, big regist, big-registratie, buitenland, foreign, diploma, akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets] }
+    watch_pages:
+      - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
+      - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
 
   - id: research
     title: "Clinical trials, regulation & medical affairs"
@@ -68,27 +77,22 @@ sections:
       - { q: 'pharmacovigilance OR "drug safety" OR "medical affairs" industry trends', lang: en }
       - { q: 'klinisch onderzoek Nederland geneesmiddelen studie', lang: nl }
 
-  - id: big
-    title: "BIG register & diploma recognition"
-    short: "BIG"
-    max_age_days: 21
-    max_items: 8
+  - id: medicine
+    title: "Medical science & research"
+    short: "Medicine"
+    max_age_days: 7
+    max_items: 15
+    feeds:
+      - { name: "NEJM", url: "https://www.nejm.org/action/showFeed?type=etoc&feed=rss&jc=nejm" }
+      - { name: "The Lancet", url: "https://www.thelancet.com/rssfeed/lancet_current.xml" }
+      - { name: "The BMJ", url: "https://www.bmj.com/rss/recent.xml" }
+      - { name: "Nature Medicine", url: "https://www.nature.com/nm.rss" }
+      - { name: "STAT", url: "https://www.statnews.com/feed/" }
     google_news:
-      - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl }
-      - { q: '"buitenlandse artsen" OR "buitenlands gediplomeerde" OR "buitenlands diploma" zorg', lang: nl }
-      - { q: 'AKV-toets OR BI-toets OR CBGV OR "Commissie Buitenlandse Gediplomeerden"', lang: nl }
-      - { q: 'artsen "buiten de EU" OR "van buiten Europa" erkenning diploma', lang: nl }
-      - { q: 'Netherlands foreign doctors "BIG register" OR registration OR diploma', lang: en }
-      - { q: 'site:medischcontact.nl "buitenlandse artsen"', lang: nl }
-      - { q: 'site:medischcontact.nl "BIG-register"', lang: nl }
-    # Only keep articles that mention one of these (case-insensitive).
-    keywords: [big-regist, big regist, "big-registratie", buitenland, foreign, diploma,
-               akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets]
-    watch_pages:
-      # Official sources. If a URL stops working the digest will say so -
-      # just update it here.
-      - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
-      - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
+      - { q: '"phase 3" trial results OR "topline results" OR "met its primary endpoint"', lang: en }
+      - { q: 'FDA approves OR "EMA recommends" OR "CHMP positive opinion" new drug', lang: en }
+      - { q: 'NEJM OR Lancet OR JAMA OR BMJ study finds', lang: en }
+      - { q: 'medisch onderzoek UMC Utrecht OR Amsterdam UMC OR LUMC OR Erasmus MC studie', lang: nl }
 
   - id: banking
     title: "Dutch banking & ALM"
@@ -111,6 +115,15 @@ sections:
       - { q: 'Wtp pensioenfondsen transitie swaprente OR rentecurve OR "lange rente"', lang: nl }
       - { q: 'euro swap rates OR "swap curve" OR Euribor OR €STR pension funds', lang: en }
       - { q: 'huizenprijzen OR woningmarkt OR hypotheekmarkt Kadaster OR CBS OR NHG', lang: nl }
+      - { q: 'oversluiten OR boeterente OR "vervroegd aflossen" hypotheek', lang: nl }
+      - { q: 'covered bond OR RMBS OR "senior preferred" Dutch bank issuance', lang: en }
+      - { q: 'EBA "stress test" OR "deposit outflows" OR "deposit beta" banks Europe', lang: en }
+
+    # Tiles: Dutch retail rates from the ECB's bank interest rate statistics (monthly)
+    rates:
+      - { source: ecb, id: "MIR/M.NL.B.A2C.A.R.A.2250.EUR.N", name: "NL new mortgages", region: "Avg rate, new business · monthly" }
+      - { source: ecb, id: "MIR/M.NL.B.L22.F.R.A.2250.EUR.N", name: "NL term deposits ≤1y", region: "Households, new business · monthly" }
+      - { source: ecb, id: "ICP/M.NL.N.000000.4.ANR",         name: "Dutch inflation",  region: "HICP, % y/y · monthly" }
 
   - id: rates
     title: "Interest rates & central banks"
@@ -185,6 +198,9 @@ rates:
   - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",     name: "2Y euro curve",    region: "AAA govt spot rate" }
   - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",    name: "10Y euro curve",   region: "AAA govt spot rate" }
   - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y",    name: "30Y euro curve",   region: "AAA govt spot rate" }
+  - { source: ecb,   spread: ["YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"], name: "Euro 2s10s slope", region: "10Y minus 2Y, AAA curve" }
+  - { source: ecb,   spread: ["YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"], name: "Euro 10s30s slope", region: "30Y minus 10Y, AAA curve" }
+  - { source: ecb,   id: "ICP/M.U2.N.000000.4.ANR",                name: "Euro area inflation", region: "HICP, % y/y" }
   - { source: ecb,   id: "IRS/M.NL.L.L40.CI.0000.EUR.N.Z",         name: "10Y Dutch DSL",    region: "Netherlands · monthly" }
   - { source: yahoo, id: "^IRX",                                   name: "US 3-month bill",  region: "United States" }
   - { source: yahoo, id: "^TNX",                                   name: "US 10-year",       region: "United States" }
@@ -199,6 +215,11 @@ watchlist:
   - { symbol: "^GSPC",   name: "S&P 500" }
   - { symbol: "^NDX",    name: "Nasdaq 100" }
   - { symbol: "^AEX",    name: "AEX (Amsterdam)" }
+  - { symbol: "^STOXX50E", name: "Euro Stoxx 50" }
+  - { symbol: "^SX7E",   name: "Euro Stoxx Banks" }
+  - { symbol: "^VIX",    name: "VIX" }
+  - { symbol: "BZ=F",    name: "Brent (USD)" }
+  - { symbol: "GC=F",    name: "Gold (USD)" }
   - { symbol: "EURUSD=X", name: "EUR/USD" }
   - { symbol: "WKL.AS",  name: "Wolters Kluwer", news: '"Wolters Kluwer"' }
   - { symbol: "INGA.AS",  name: "ING",            news: 'ING Groep results OR shares' }

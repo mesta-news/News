@@ -14,6 +14,9 @@
   .tabs a.active { color: var(--ink); border-bottom-color: var(--claret); }
   .tabs .count { margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: var(--panel);
                  color: var(--muted); font-size: .64rem; letter-spacing: 0; }
+  .tabs a.unread::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 5px;
+                         border-radius: 50%; background: var(--claret); vertical-align: 2px; }
+  .tabs a.active::after { display: none; }
   .tabs a.active .count { background: var(--claret); color: var(--paper); }
 
   /* Black market ticker */
@@ -75,14 +78,21 @@
   .foryou li { margin: 0 0 6px; font-size: .94rem; }
   .foryou li:last-child { margin-bottom: 0; }
 
+  .radar { margin: 18px 0 4px; padding: 12px 16px; border: 1px solid var(--rule-strong); background: var(--card); }
+  .radar ul { list-style: none; margin: 6px 0 0; padding: 0; }
+  .radar li { display: flex; gap: 12px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: .92rem; }
+  .radar li:first-child { border-top: 0; }
+  .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--claret); font-variant-numeric: tabular-nums; }
+  .stale { margin: 10px 0 0; padding: 8px 12px; font-size: .8rem; background: var(--alert-soft); color: var(--alert); }
   .alert { margin: 0 0 16px; padding: 12px 14px; background: var(--alert-soft); color: var(--alert); font-size: .9rem; }
   .alert a { font-weight: 700; }
   .alert pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .78rem; margin: 8px 0 0; color: var(--ink); }
 
   /* Data tiles */
   .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px;
-           margin: 0 0 22px; background: var(--rule); border: 1px solid var(--rule); }
-  .tile { display: block; padding: 11px 12px 10px; background: var(--card); text-decoration: none; }
+           margin: 0 0 22px; padding: 1px; }
+  .tile { display: block; padding: 11px 12px 10px; background: var(--card); text-decoration: none;
+          box-shadow: 0 0 0 1px var(--rule); }
   .tile-name { font-size: .78rem; font-weight: 700; line-height: 1.3; }
   .tile-sub { font-size: .68rem; color: var(--faint); }
   .tile-val { margin-top: 5px; font-size: 1.22rem; font-weight: 700; letter-spacing: -.01em; }
@@ -119,7 +129,7 @@
   .errors summary { color: var(--faint); }
 </style>
 </head>
-<body>
+<body data-edition="{{ d.date }} {{ d.generated_label }}" data-date="{{ d.date }}">
 {%- macro story(i) %}
       <li>
         <div class="src">{{ i.sources[0] }}{% if i.sources | length > 1 %} +{{ i.sources | length - 1 }}{% endif %}</div>
@@ -159,7 +169,7 @@
     <div class="tick num"><span class="tick-name">{{ q.name }}</span><span class="tick-val">{{ q.price | price }}</span>{% if q.d1 is not none %}<span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span>{% endif %}</div>
     {% endfor %}
     {% for r in rate_ticks %}
-    <div class="tick num"><span class="tick-name">{{ r.name }}</span><span class="tick-val">{{ "{:.2f}".format(r.value) }}%</span>{% if r.m1 is not none %}<span class="{{ r.m1 | updown }}">{{ r.m1 | bp }}</span>{% endif %}</div>
+    <div class="tick num"><span class="tick-name">{{ r.name }}</span><span class="tick-val">{{ r | rateval }}</span>{% if r.m1 is not none %}<span class="{{ r.m1 | updown }}">{{ r.m1 | bp }}</span>{% endif %}</div>
     {% endfor %}
   </div></div>
 </div>
@@ -172,6 +182,7 @@
     <h1 class="front-title">Today's brief</h1>
     <div class="meta">{{ d.sections | sum(attribute="new_count") }} new stories across {{ d.sections | length }} sections</div>
     <div class="offline">You're offline. Showing the last saved edition.</div>
+    <div class="stale" hidden>This edition is from {{ d.date_label }}. Today's run may have failed; check the Actions tab on GitHub.</div>
 
     {% if d.top %}
     <div class="minute">
@@ -234,7 +245,7 @@
         <div class="tile-name">{{ r.name }}</div>
         <div class="tile-sub">{{ r.region }}</div>
         {% if r.value is not none %}
-        <div class="tile-val num">{{ "{:.2f}".format(r.value) }}%</div>
+        <div class="tile-val num">{{ r | rateval }}</div>
         <div class="tile-chg num">
           {% if r.m1 is not none %}<span><span class="pill {{ r.m1 | updown }}">{{ r.m1 | bp }}</span> 1M</span>{% endif %}
           {% if r.y1 is not none %}<span><span class="pill {{ r.y1 | updown }}">{{ r.y1 | bp }}</span> 1Y</span>{% endif %}
@@ -269,6 +280,12 @@
 
     {% if s.briefing %}
     <div class="brief">{{ s.briefing.summary | md }}</div>
+    {% if s.briefing.on_radar %}
+    <div class="radar">
+      <div class="kicker">On the radar</div>
+      <ul>{% for e in s.briefing.on_radar %}{% set when, _, what = e.partition(": ") %}<li>{% if what %}<span class="when">{{ when }}</span><span>{{ what }}</span>{% else %}<span>{{ e }}</span>{% endif %}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
     {% if s.briefing.for_you %}
     <div class="foryou">
       <div class="kicker">What it means for you</div>
@@ -332,8 +349,23 @@
     const nav = document.querySelector(".tabs");
     let current = null;
 
+    // Unread dots: which tabs this device has opened since the current edition.
+    const edition = document.body.dataset.edition;
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem("brief-seen") || "{}"); } catch (e) {}
+    tabs.forEach(a => a.classList.toggle("unread", a.dataset.tab !== "today" && seen[a.dataset.tab] !== edition));
+
+    // Warn when the newest edition is older than yesterday (e.g. a failed run).
+    const ageDays = (Date.now() - new Date(document.body.dataset.date + "T12:00:00")) / 864e5;
+    if (ageDays > 1.6 && location.pathname.split("/").pop().replace(/^$/, "index.html") === "index.html") {
+      document.querySelector(".stale").hidden = false;
+    }
+
     function show(id, { save = true } = {}) {
       if (!ids.includes(id)) id = "today";
+      seen[id] = edition;
+      tabs.find(a => a.dataset.tab === id)?.classList.remove("unread");
+      try { localStorage.setItem("brief-seen", JSON.stringify(seen)); } catch (e) {}
       panels.forEach(p => p.classList.toggle("active", p.dataset.panel === id));
       tabs.forEach(a => a.classList.toggle("active", a.dataset.tab === id));
       const tab = tabs.find(a => a.dataset.tab === id);
