@@ -22,6 +22,7 @@ SECTION_SCHEMA = {
     "type": "object",
     "properties": {
         "summary": {"type": "array", "items": {"type": "string"}},
+        "summary_sources": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
         "for_you": {"type": "array", "items": {"type": "string"}},
         "on_radar": {"type": "array", "items": {"type": "string"}},
         "alert": {
@@ -55,7 +56,7 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "for_you", "on_radar", "alert", "explainer", "article_summaries", "highlights"],
+    "required": ["summary", "summary_sources", "for_you", "on_radar", "alert", "explainer", "article_summaries", "highlights"],
     "additionalProperties": False,
 }
 
@@ -247,6 +248,7 @@ Rules:
 - Write in {language}. Articles may be in Dutch - translate as needed.
 - Write like a good newspaper briefing: plain, precise, no filler or hedging boilerplate.
 - "summary": a list of 2-6 bullet points (one string each, markdown allowed, no leading dash) with the most important developments. Start each with a short **bold lead-in** (3-7 words), then at most two short sentences. If nothing meaningful happened, say so in one bullet.
+- "summary_sources": one list per summary bullet, in the same order: the ids of the articles that bullet is based on (1-5 ids; empty list for a bullet based only on data such as quotes or rates).
 - "for_you": 0-3 concrete takeaways or actions for us, based on the profile, one sentence each (empty list if none).
 - "on_radar": 0-4 upcoming events with a date that the articles or data mention (central bank meetings, data releases, earnings, auctions, regulatory deadlines, conferences), each starting with the date, e.g. "23 Oct: ECB rate decision". Never guess a date; empty list if none.
 - "alert": set "important" to true only when something today is big enough to interrupt the reader with a phone notification ({alert_rule}). Most days it is false. "headline" is one plain sentence (max 18 words) saying what happened; empty when not important.
@@ -358,7 +360,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_quotes = any(q.get("price") is not None for q in section.get("quotes") or [])
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
-        return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [],
+        return {"summary": "- Nothing new since the last digest.", "summary_refs": [[]], "for_you": [], "on_radar": [],
                 "alert": {"important": False, "headline": ""}, "article_summaries": [],
                 "explainer": {"title": "", "text": ""}, "highlights": []}
 
@@ -402,8 +404,10 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     out = _call(client, cfg, system, user, SECTION_SCHEMA)
     if out:
         # Store as markdown bullets; the page and the front-page cards read that.
-        out["summary"] = "\n".join("- " + b.strip().lstrip("-• ").strip()
-                                    for b in out["summary"] if b.strip())
+        sources = out.pop("summary_sources", None) or []
+        kept = [(b, sources[n] if n < len(sources) else []) for n, b in enumerate(out["summary"]) if b.strip()]
+        out["summary"] = "\n".join("- " + b.strip().lstrip("-• ").strip() for b, _ in kept)
+        out["summary_refs"] = [refs for _, refs in kept]  # article ids behind each bullet
     return out
 
 

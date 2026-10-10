@@ -207,7 +207,10 @@
   .notify .modes input { margin-top: 2px; flex: none; }
 
   /* Whole stories are tappable and open the in-app reader */
-  li[data-id] { cursor: pointer; }
+  li[data-id], .brief > ul > li, .minute li, .card .standfirst { cursor: pointer; }
+  .brief > ul > li:active, .minute li:active, .card .standfirst:active { background: var(--panel); }
+  .panel:not(#tab-week) > .brief > ul > li::after, .minute li[data-cat] > p::after, .card .standfirst::after { content: " ›"; color: var(--claret); font-weight: 700; }
+  #r-rel li { padding-right: 0; }
   li[data-id]:active { background: var(--panel); }
   dialog.reader { width: 100%; max-width: 760px; height: 100%; max-height: 100%; margin: 0 auto; padding: 0; border: 0;
                   background: var(--paper); color: var(--ink); overscroll-behavior: contain; }
@@ -674,10 +677,12 @@
     <h2 id="r-title"></h2>
     <div class="meta" id="r-meta"></div>
     <img id="r-img" alt="" hidden referrerpolicy="no-referrer">
-    <section class="r-block" id="r-sum-box"><div class="kicker">Summary</div><p id="r-sum"></p>
-      <p class="meta">Written by Claude from the article. Check the source for details.</p></section>
+    <section class="r-block" id="r-sum-box"><div class="kicker" id="r-sum-k">Summary</div><p id="r-sum"></p>
+      <p class="meta" id="r-sum-foot">Written by Claude from the article. Check the source for details.</p></section>
     <section class="foryou" id="r-note-box"><div class="kicker">Why it matters</div><p id="r-note"></p></section>
     <section class="r-block" id="r-snip-box"><div class="kicker">From the feed</div><p id="r-snip"></p></section>
+    <section class="r-block" id="r-rel-box" hidden><div class="kicker">The articles behind it</div>
+      <ul class="stories" id="r-rel"></ul></section>
     <a class="source-btn" id="r-link" target="_blank" rel="noopener"></a>
     <button class="next-btn" type="button" id="r-next"></button>
   </div>

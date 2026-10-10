@@ -94,6 +94,9 @@ UNLOCK_PAGE = """<!doctype html>
   const open = async raw => {
     const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
     const html = new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(S.iv) }, key, b64(S.ct)));
+    // Replace this page only once it has fully loaded: writing earlier would add the
+    // brief to this page instead of replacing it (wrong viewport, desktop-width layout).
+    if (document.readyState !== "complete") await new Promise(r => addEventListener("load", r, { once: true }));
     document.open(); document.write(html); document.close();
   };
   let saved = null;
