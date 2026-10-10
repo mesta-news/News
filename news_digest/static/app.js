@@ -80,7 +80,7 @@
   }, true);
 
   function rank() {
-    if (!Object.keys(prefs.w).length) return;
+    if (!Object.keys(prefs.w).length || load("brief-settings", {}).foryou === false) return;
     document.querySelectorAll(".panel:not([data-extra]) ul.stories:not(.older)").forEach(ul => {
       const lis = [...ul.children].filter(li => li.dataset.id);
       const scored = lis.map(li => {
@@ -237,6 +237,63 @@
   $("chart-close")?.addEventListener("click", () => dlg.close());
   dlg?.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
   addEventListener("resize", () => { if (dlg?.open && current) draw(current); });
+
+  // ------------------------------------------------------------------ settings
+  // Theme and text size apply at once (and before drawing, see _head.html.j2);
+  // tabs, start page, ticker and "For you" apply when Settings closes.
+  const sdlg = $("settings");
+  const S = () => load("brief-settings", {});
+  const root = document.documentElement;
+
+  function applyLook(set) {
+    if (set.theme === "light" || set.theme === "dark") { root.dataset.theme = set.theme; root.style.colorScheme = set.theme; }
+    else { delete root.dataset.theme; root.style.colorScheme = ""; }
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m, i) =>
+      m.content = set.theme === "dark" ? "#111112" : set.theme === "light" ? "#fff1e5" : (i ? "#111112" : "#fff1e5"));
+    if (set.size && set.size !== 100) root.style.setProperty("--fs", set.size + "%"); else root.style.removeProperty("--fs");
+  }
+
+  function fill() {
+    const set = S();
+    const pick = (name, value) => sdlg.querySelectorAll(`input[name=${name}]`).forEach(r => r.checked = r.value === String(value));
+    pick("set-theme", set.theme || "system");
+    pick("set-size", set.size || 100);
+    pick("set-start", set.start || "last");
+    $("set-ticker").checked = set.ticker !== false;
+    $("set-foryou").checked = set.foryou !== false;
+    sdlg.querySelectorAll("#set-tabs input").forEach(b => b.checked = !(set.hidden || []).includes(b.value));
+  }
+
+  function read() {
+    const val = name => sdlg.querySelector(`input[name=${name}]:checked`)?.value;
+    return {
+      theme: val("set-theme"), size: Number(val("set-size")) || 100, start: val("set-start"),
+      ticker: $("set-ticker").checked, foryou: $("set-foryou").checked,
+      hidden: [...sdlg.querySelectorAll("#set-tabs input")].filter(b => !b.checked).map(b => b.value),
+    };
+  }
+
+  if (sdlg) {
+    let before = "";
+    $("settings-btn").addEventListener("click", () => { fill(); before = JSON.stringify(S()); sdlg.showModal(); });
+    sdlg.addEventListener("change", () => { const set = read(); store("brief-settings", set); applyLook(set); });
+    const close = () => {
+      sdlg.close();
+      const now = S(), was = JSON.parse(before || "{}");
+      // Tab list, start page, ticker and ranking are set up at load time: reload if they changed.
+      if (["hidden", "start", "ticker", "foryou"].some(k => JSON.stringify(now[k]) !== JSON.stringify(was[k]))) location.reload();
+    };
+    $("settings-done").addEventListener("click", close);
+    sdlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    sdlg.addEventListener("click", e => { if (e.target === sdlg) close(); });
+    $("settings-notify")?.addEventListener("click", () => { sdlg.close(); $("bell")?.click(); });
+    $("settings-reset").addEventListener("click", e => {
+      e.preventDefault();
+      try { localStorage.removeItem("brief-settings"); } catch (err) {}
+      applyLook({});
+      fill();
+    });
+  }
 
   syncStars();
   renderSaved();

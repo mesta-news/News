@@ -11,7 +11,22 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>document.documentElement.classList.add("js")</script>
+<script>
+  // Apply this phone's settings (theme, text size) before the page is drawn, so nothing flashes.
+  (() => {
+    const root = document.documentElement;
+    root.classList.add("js");
+    let set = {};
+    try { set = JSON.parse(localStorage.getItem("brief-settings") || "{}"); } catch (e) {}
+    if (set.theme === "light" || set.theme === "dark") {
+      root.dataset.theme = set.theme;
+      root.style.colorScheme = set.theme;
+      addEventListener("DOMContentLoaded", () => document.querySelectorAll('meta[name="theme-color"]').forEach(m =>
+        m.content = set.theme === "dark" ? "#111112" : "#fff1e5"));
+    }
+    if (set.size) root.style.setProperty("--fs", set.size + "%");
+  })();
+</script>
 <style>
   /* Salmon paper, ink text, claret and teal accents; a black market ticker. */
   :root {
@@ -26,8 +41,9 @@
     --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px); --safe-right: env(safe-area-inset-right, 0px);
   }
+  /* Dark palette: follows the phone, unless Settings forces light or dark. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --paper: #111112; --panel: #1c1c1e; --card: #19191b; --ink: #f2eee9; --ink-2: #d9d4ce;
       --muted: #a39d97; --faint: #7d7873; --rule: #2c2b2b; --rule-strong: #f2eee9;
       --claret: #f0668f; --teal: #4fc0c8; --teal-soft: #15292b;
@@ -35,9 +51,16 @@
       --alert: #f2c26b; --alert-soft: #2c2312;
     }
   }
+  :root[data-theme="dark"] {
+      --paper: #111112; --panel: #1c1c1e; --card: #19191b; --ink: #f2eee9; --ink-2: #d9d4ce;
+      --muted: #a39d97; --faint: #7d7873; --rule: #2c2b2b; --rule-strong: #f2eee9;
+      --claret: #f0668f; --teal: #4fc0c8; --teal-soft: #15292b;
+      --up: #3ec27a; --down: #ff6b61; --up-soft: #12271b; --down-soft: #301615;
+      --alert: #f2c26b; --alert-soft: #2c2312;
+  }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 var(--sans);
+  html { -webkit-text-size-adjust: 100%; font-size: var(--fs, 100%); }  /* text size from Settings */
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.55 var(--sans);
          -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   a { color: inherit; }
   .wrap { max-width: 980px; margin: 0 auto;
