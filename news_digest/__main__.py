@@ -25,7 +25,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import alerts, icons, markets, pages, push, rates, sources, summarize
+from . import alerts, articles, icons, markets, pages, push, rates, sources, summarize
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -152,6 +152,8 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
             sec["previous_briefing"] = earlier[sec["id"]]
 
     client = summarize._client() if use_ai else None
+    if client:
+        articles.enrich(sections)  # article text for Claude's reader summaries, plus images
     top: list[str] = []
     if client:
         with ThreadPoolExecutor(max_workers=3) as pool:
@@ -163,8 +165,12 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
                 sec["errors"].append("AI summary failed for this section (see workflow log).")
                 continue
             notes = {h["id"]: h["note"] for h in brief["highlights"]}
+            summaries = {a["id"]: a["summary"] for a in brief.get("article_summaries") or []}
+            brief.pop("article_summaries", None)  # stored on the items instead
             for it in sec["items"]:
                 it["note"] = notes.get(it["id"], "")
+                if summaries.get(it["id"]):
+                    it["summary"] = summaries[it["id"]]
             # Put the highlighted articles first (sort is stable, so ranking is kept).
             sec["items"].sort(key=lambda i: not i["note"])
             alert = brief.get("alert") or {}
@@ -176,6 +182,8 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
 
     for sec in sections:
         sec.pop("previous_briefing", None)  # only an input for Claude; already in yesterday's file
+        for it in sec["items"]:
+            it.pop("_text", None)  # article text is never stored or published
 
     # Forget old "seen" ids so the state file stays small.
     keep_after = (now - timedelta(days=cfg.get("seen_retention_days", 60))).date().isoformat()
@@ -335,6 +343,20 @@ def _charts(d: dict) -> dict:
     return out
 
 
+def _articles(d: dict) -> dict:
+    """What the in-app reader shows for each story on the page, keyed by story id."""
+    out = {}
+    for s in d["sections"]:
+        for i in s["items"]:
+            out.setdefault(i["id"], {k: v for k, v in {
+                "t": i["title"], "l": i.get("url") or i["link"], "sec": s["id"],
+                "s": i["sources"][0] if i["sources"] else "", "n": len(i["sources"]),
+                "d": i["published"][:10], "sum": i.get("summary", ""), "note": i.get("note", ""),
+                "snip": i.get("snippet", "") if i.get("is_new") else "", "img": i.get("image", ""),
+            }.items() if v})
+    return out
+
+
 def _search_index(digests: list[dict]) -> dict:
     """Compact index of the last 90 days for the in-app search (search.json)."""
     sections, items, briefs, seen_links = {}, [], [], set()
@@ -387,7 +409,7 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
             s.update({k: style[s["id"]][k] for k in ("emoji", "color")
                       if s["id"] in style and style[s["id"]].get(k)})
         digests.append(d)
-        out = page.render(d=d, charts=_charts(d))
+        out = page.render(d=d, charts=_charts(d), articles=_articles(d))
         (out_dir / f"{d['date']}.html").write_text(out)
         if not index_html:
             index_html = out

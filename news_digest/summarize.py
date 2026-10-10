@@ -36,6 +36,15 @@ SECTION_SCHEMA = {
             "required": ["title", "text"],
             "additionalProperties": False,
         },
+        "article_summaries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"id": {"type": "string"}, "summary": {"type": "string"}},
+                "required": ["id", "summary"],
+                "additionalProperties": False,
+            },
+        },
         "highlights": {
             "type": "array",
             "items": {
@@ -46,7 +55,7 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "for_you", "on_radar", "alert", "explainer", "highlights"],
+    "required": ["summary", "for_you", "on_radar", "alert", "explainer", "article_summaries", "highlights"],
     "additionalProperties": False,
 }
 
@@ -243,6 +252,7 @@ Rules:
 - "alert": set "important" to true only when something today is big enough to interrupt the reader with a phone notification ({alert_rule}). Most days it is false. "headline" is one plain sentence (max 18 words) saying what happened; empty when not important.
 - "explainer": when one development needs background to be understood, a short explainer: "title" (a question, e.g. "Why does the 10s30s slope matter?") and "text" (80-140 words, plain language, using only the provided articles and data plus well-established general knowledge, no new news facts). Empty strings when nothing needs explaining.
 - If "previous_briefing" is given, it is what this section said in the last edition: don't repeat it; say when something is a follow-up ("update:", "as expected", "reversal") and what changed.
+- "article_summaries": for every article that includes "text" (the start of the article itself), a summary for the in-app reader: 2-4 plain sentences on what the article actually reports (who, what, numbers, dates), using only that text. Don't add opinions or facts from elsewhere. Skip articles without "text".
 - "highlights": up to 6 of the most useful articles, by their id, each with a note of at most 20 words on why it matters to us.
 """
 
@@ -349,7 +359,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
         return {"summary": "- Nothing new since the last digest.", "for_you": [], "on_radar": [],
-                "alert": {"important": False, "headline": ""},
+                "alert": {"important": False, "headline": ""}, "article_summaries": [],
                 "explainer": {"title": "", "text": ""}, "highlights": []}
 
     payload = {
@@ -357,7 +367,8 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
         "articles": [
             {"id": i["id"], "title": i["title"], "source": ", ".join(i["sources"]),
              "published": i["published"][:10], "snippet": i["snippet"],
-             **({"group": i["group"]} if i.get("group") else {})}
+             **({"group": i["group"]} if i.get("group") else {}),
+             **({"text": i["_text"]} if i.get("_text") else {})}
             for i in new_items
         ],
     }
