@@ -253,7 +253,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
 
     if has_rates:
         payload["key_rates"] = [
-            {k: v for k, v in r.items() if k not in ("spark", "id")}
+            {k: v for k, v in r.items() if k not in ("spark", "id", "url")}
             for r in section["rates"] if r.get("value") is not None
         ]
 

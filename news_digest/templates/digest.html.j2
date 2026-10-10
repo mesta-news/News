@@ -230,7 +230,7 @@
     {% if s.rates %}
     <div class="tiles">
       {% for r in s.rates %}
-      <a class="tile" href="https://fred.stlouisfed.org/series/{{ r.id | urlencode }}" target="_blank" rel="noopener">
+      <a class="tile" href="{{ r.url or ('https://fred.stlouisfed.org/series/' ~ (r.id | urlencode)) }}" target="_blank" rel="noopener">
         <div class="tile-name">{{ r.name }}</div>
         <div class="tile-sub">{{ r.region }}</div>
         {% if r.value is not none %}
@@ -317,7 +317,7 @@
 
   <footer>
     <p>{% if d.ai %}Briefings are written by Claude from the linked articles. Check the source before acting on anything.{% else %}AI briefings are off: no Claude token or API key is set.{% endif %}</p>
-    <p>Market data: Yahoo Finance. Interest rates: FRED, Federal Reserve Bank of St. Louis. For information only, not investment advice.</p>
+    <p>Market data: Yahoo Finance. Interest rates: European Central Bank and Yahoo Finance. For information only, not investment advice.</p>
     <p><a href="archive.html">Past editions</a></p>
   </footer>
 </main>
