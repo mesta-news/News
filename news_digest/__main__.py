@@ -25,7 +25,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import alerts, articles, icons, markets, pages, push, rates, sources, summarize
+from . import alerts, articles, curve, icons, markets, pages, push, rates, sources, summarize, weather
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -144,6 +144,8 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
                 sec["errors"].append(err)
             sec["alerts"] += alerts.rate_alerts(sec["rates"], rate_defs,
                                                 _previous_rates(previous).get(sec["id"], {}))
+        if sec_cfg.get("yield_curve"):
+            sec["curve"] = curve.fetch()
         sec["new_count"] = sum(1 for i in sec["items"] if i["is_new"])
 
     earlier = _previous_summaries(previous)
@@ -205,6 +207,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
         "ai": bool(client),
         "top": top,
         "weekly": weekly,
+        "weather": weather.today(cfg.get("location")),
         "sections": sections,
     }
 
@@ -317,6 +320,63 @@ def _agenda(d: dict, limit: int = 12) -> list[dict]:
     return events[:limit]
 
 
+def _curve_svg(c: dict | None) -> Markup:
+    """The euro yield curve: today (solid) against 1 month and 1 year ago (dashed)."""
+    if not c or not all(v is not None for v in c["now"]):
+        return Markup("")
+    W, H, L, R, T, B = 640, 260, 8, 46, 12, 26
+    lines = [("y1", "var(--faint)", "4 4", "1 year ago"), ("m1", "var(--muted)", "2 3", "1 month ago"),
+             ("now", "var(--claret)", "", "Today")]
+    vals = [v for k, *_ in lines for v in c[k] if v is not None]
+    lo, hi = min(vals), max(vals)
+    pad = (hi - lo) * .12 or .1
+    lo, hi = lo - pad, hi + pad
+    span = c["tenors"][-1] - c["tenors"][0]
+    x = lambda t: L + (t - c["tenors"][0]) / span * (W - L - R)
+    y = lambda v: T + (1 - (v - lo) / (hi - lo)) * (H - T - B)
+    out = [f'<svg class="curve" viewBox="0 0 {W} {H}" role="img" aria-label="Euro AAA yield curve">']
+    for k in range(5):
+        v = lo + (hi - lo) * k / 4
+        out.append(f'<line x1="{L}" x2="{W - R}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="var(--rule)"/>'
+                   f'<text x="{W - R + 6}" y="{y(v) + 4:.1f}" font-size="11" fill="var(--muted)">{v:.2f}%</text>')
+    for t in c["tenors"]:
+        out.append(f'<text x="{x(t):.1f}" y="{H - 8}" font-size="11" fill="var(--muted)" text-anchor="middle">{t}y</text>')
+    for key, color, dash, _ in lines:
+        pts = [(x(t), y(v)) for t, v in zip(c["tenors"], c[key]) if v is not None]
+        if len(pts) > 1:
+            out.append(f'<polyline fill="none" stroke="{color}" stroke-width="{2.4 if key == "now" else 1.6}" '
+                       f'stroke-dasharray="{dash}" stroke-linejoin="round" points="'
+                       + " ".join(f"{a:.1f},{b:.1f}" for a, b in pts) + '"/>')
+    for t, v in zip(c["tenors"], c["now"]):
+        out.append(f'<circle cx="{x(t):.1f}" cy="{y(v):.1f}" r="3" fill="var(--claret)"/>')
+    out.append("</svg>")
+    return Markup("".join(out))
+
+
+def _calendar(digests: list[dict], today: str) -> str:
+    """An iCalendar feed of every upcoming 'Coming up' date from recent editions."""
+    import hashlib
+    seen, events = set(), []
+    for d in digests[:21]:
+        for e in _agenda(d, limit=100):
+            key = (e["date"], e["what"].lower()[:60])
+            if e["date"].isoformat() >= today and key not in seen:
+                seen.add(key)
+                events.append(e)
+    esc = lambda t: t.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", " ")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Daily Brief//EN", "CALSCALE:GREGORIAN",
+             "X-WR-CALNAME:The Daily Brief", "X-PUBLISHED-TTL:PT12H", "REFRESH-INTERVAL;VALUE=DURATION:PT12H"]
+    for e in sorted(events, key=lambda e: e["date"]):
+        day = e["date"].strftime("%Y%m%d")
+        uid = hashlib.sha1(f"{day}{e['what']}".encode()).hexdigest()[:16]
+        summary = esc(f"{e['label']}: {e['what']}" + (f" ({e['time']})" if e["time"] else ""))
+        lines += ["BEGIN:VEVENT", f"UID:{uid}@daily-brief", f"DTSTAMP:{stamp}",
+                  f"DTSTART;VALUE=DATE:{day}", f"SUMMARY:{summary[:250]}", "TRANSP:TRANSPARENT", "END:VEVENT"]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines) + "\r\n"
+
+
 def tile_slug(sec: str, x: dict) -> str:
     """Stable element id for a price/rate tile (ticker links and charts use it)."""
     key = str(x.get("symbol") or x.get("id") or x.get("name") or "").lower()
@@ -378,7 +438,7 @@ def jinja_env() -> Environment:
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
                        bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
-                       agenda=_agenda)
+                       agenda=_agenda, curve=_curve_svg)
     env.globals["tile_slug"] = tile_slug
     return env
 
@@ -416,6 +476,8 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
         entries.append({"date": d["date"], "label": d["date_label"],
                         "new_count": sum(s.get("new_count", 0) for s in d["sections"])})
     (out_dir / "index.html").write_text(index_html or "<p>No digest yet.</p>")
+    if digests:
+        (out_dir / "calendar.ics").write_text(_calendar(digests, digests[0]["date"]))
     (out_dir / "search.json").write_text(json.dumps(_search_index(digests), ensure_ascii=False,
                                                     separators=(",", ":")))
     (out_dir / "archive.html").write_text(

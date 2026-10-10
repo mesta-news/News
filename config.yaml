@@ -22,6 +22,9 @@ profile: |
   - Both also follow general news from the Netherlands, Morocco and the world.
   - No stock holdings yet; they follow a watchlist and think in euros.
 
+# Weather on the Today page (Open-Meteo, no key needed)
+location: { name: "Utrecht", lat: 52.09, lon: 5.12 }
+
 # Claude model used for the summaries (only if ANTHROPIC_API_KEY is set).
 model: claude-opus-5-5
 effort: medium        # low | medium | high  (higher = deeper, slower, pricier)
@@ -154,6 +157,7 @@ sections:
   - id: rates
     title: "Interest rates & central banks"
     short: "Rates"
+    yield_curve: true   # euro AAA curve chart: today vs 1 month and 1 year ago
     emoji: "📉"
     color: ["#6d28d9", "#a78bfa"]   # light, dark: tab colour and notification icon
     max_age_days: 4
@@ -256,6 +260,9 @@ sections:
       - { q: 'Maroc OR Rabat OR Casablanca économie OR politique', lang: fr, group: "Morocco" }
       - { q: 'Marokko OR Marokkaanse Nederland', lang: nl, group: "Morocco" }
       - { q: 'site:reuters.com world news', lang: en, group: "World" }
+    # Money between the two countries
+    quotes:
+      - { symbol: "EURMAD=X", name: "EUR → MAD", unit: "dirham per euro", group: "Morocco" }
 
   - id: ai
     title: "AI - models, tools & techniques"
