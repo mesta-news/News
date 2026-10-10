@@ -4,180 +4,218 @@
 <title>The Daily Brief · {{ d.date_label }}</title>
 {% include "_head.html.j2" %}
 <style>
-  /* Masthead */
-  .masthead { padding: 28px 0 22px; border-bottom: 3px double var(--line-strong); }
-  .masthead h1 { margin: 8px 0 8px; font: 600 clamp(1.9rem, 7vw, 2.7rem)/1.08 var(--serif); letter-spacing: -.02em; }
-  .edition { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  /* Section tabs */
+  .tabs { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px;
+          padding: 0 16px; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--rule); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs a { flex: none; padding: 10px 0 9px; font: 700 .72rem/1 var(--sans); letter-spacing: .08em;
+            text-transform: uppercase; color: var(--muted); text-decoration: none;
+            border-bottom: 3px solid transparent; white-space: nowrap; }
+  .tabs a.active { color: var(--ink); border-bottom-color: var(--claret); }
+  .tabs .count { margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: var(--panel);
+                 color: var(--muted); font-size: .64rem; letter-spacing: 0; }
+  .tabs a.active .count { background: var(--claret); color: var(--paper); }
 
-  /* Lead: in one minute */
-  .lead { padding: 26px 0 28px; border-bottom: 1px solid var(--line); }
-  .lead ol { list-style: none; counter-reset: lead; margin: 14px 0 0; padding: 0; }
-  .lead li { counter-increment: lead; position: relative; padding: 0 0 0 30px; margin: 0 0 16px;
-             font: 400 1.08rem/1.5 var(--serif); }
-  .lead li:last-child { margin-bottom: 0; }
-  .lead li::before { content: counter(lead); position: absolute; left: 0; top: -2px;
-                     font: 600 1.55rem/1 var(--serif); color: var(--accent); }
+  /* Black market ticker */
+  .ticker { background: var(--tick-bg); color: var(--tick-ink); }
+  .ticker-row { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .ticker-row::-webkit-scrollbar { display: none; }
+  .tick { flex: none; display: flex; align-items: baseline; gap: 7px; padding: 9px 16px 9px 0; margin-right: 16px;
+          border-right: 1px solid #262626; font-size: .76rem; white-space: nowrap; }
+  .tick:last-child { border-right: 0; }
+  .tick-name { color: var(--tick-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .68rem; }
+  .tick-val { font-weight: 700; }
+  .tick .up { color: var(--tick-up); } .tick .down { color: var(--tick-down); } .tick .flat { color: var(--tick-muted); }
 
-  /* Market strip */
-  .strip { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; margin: 0 -18px;
-           padding: 0 18px; border-bottom: 1px solid var(--line); }
-  .strip::-webkit-scrollbar { display: none; }
-  .strip-item { flex: none; padding: 14px 18px 14px 0; margin-right: 18px; border-right: 1px solid var(--line); }
-  .strip-item:last-child { border-right: 0; }
-  .strip-name { font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  .strip-val { font-size: .98rem; font-weight: 600; }
-  .chg { font-size: .78rem; font-weight: 600; }
-  .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--muted); }
+  /* Panels */
+  .js .panel { display: none; }
+  .js .panel.active { display: block; animation: fade .18s ease-out; }
+  @keyframes fade { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .panel { padding-top: 22px; }
+  .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--rule-strong); }
+  .panel-head h2 { margin: 6px 0 0; font: 600 clamp(1.7rem, 6.5vw, 2.3rem)/1.1 var(--serif); letter-spacing: -.015em; }
+  .panel-head .meta { margin-top: 6px; }
 
-  /* Sections */
-  section { padding: 34px 0 6px; }
-  .sec-head { display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px;
-              border-bottom: 1px solid var(--line-strong); margin-bottom: 18px; }
-  .sec-num { font: 600 .8rem/1 var(--sans); color: var(--muted); font-variant-numeric: tabular-nums; }
-  .sec-head h2 { margin: 0; font: 600 1.5rem/1.2 var(--serif); letter-spacing: -.01em; }
+  /* Front page */
+  .dateline { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px;
+              padding: 8px 0; border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule-strong);
+              font-size: .74rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+  .front-title { margin: 18px 0 2px; font: 600 clamp(1.9rem, 7.5vw, 2.8rem)/1.05 var(--serif); letter-spacing: -.02em; }
+  .minute { margin: 20px 0 8px; padding: 16px 18px 6px; background: var(--panel); border-top: 4px solid var(--claret); }
+  .minute ol { list-style: none; margin: 10px 0 0; padding: 0; }
+  .minute li { padding: 10px 0 12px; border-top: 1px solid var(--rule); }
+  .minute li:first-child { border-top: 0; padding-top: 2px; }
+  .minute .kicker a { text-decoration: none; }
+  .minute p { margin: 3px 0 0; font: 400 1.05rem/1.45 var(--serif); color: var(--ink); }
 
-  .brief { font-size: .97rem; }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 18px; }
+  @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; column-gap: 32px; } }
+  .card { padding: 16px 0 18px; border-top: 1px solid var(--rule); }
+  .card-title { display: block; margin: 6px 0 4px; font: 600 1.22rem/1.25 var(--serif); text-decoration: none; }
+  .card-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .standfirst { margin: 0; color: var(--ink-2); font-size: .92rem; }
+  .card ul { list-style: none; margin: 10px 0 0; padding: 0; }
+  .card li { padding: 7px 0 0; font: 500 .92rem/1.35 var(--serif); }
+  .card li a { text-decoration: none; }
+  .card li a:hover { text-decoration: underline; }
+  .more { display: inline-block; margin-top: 10px; font: 700 .7rem/1 var(--sans); letter-spacing: .08em;
+          text-transform: uppercase; color: var(--claret); text-decoration: none; }
+
+  /* Section body */
+  .brief { font-size: .98rem; }
   .brief ul { margin: 0; padding: 0; list-style: none; }
-  .brief li { position: relative; padding-left: 18px; margin: 0 0 12px; color: var(--text); }
-  .brief li::before { content: ""; position: absolute; left: 2px; top: .68em; width: 6px; height: 6px;
-                      border-radius: 50%; background: var(--accent); }
+  .brief li { position: relative; padding: 0 0 12px 16px; margin: 0 0 12px; border-bottom: 1px solid var(--rule); }
+  .brief li:last-child { border-bottom: 0; margin-bottom: 0; }
+  .brief li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; background: var(--claret); }
   .brief p { margin: 0 0 12px; }
-  .brief strong { font-weight: 650; }
+  .brief strong { font: 700 1.02rem/1.3 var(--serif); }
 
-  .foryou { margin: 18px 0 6px; padding: 14px 16px; background: var(--accent-soft); border-radius: 10px; }
+  .foryou { margin: 18px 0 4px; padding: 14px 16px; background: var(--teal-soft); border-left: 4px solid var(--teal); }
   .foryou ul { margin: 8px 0 0; padding-left: 18px; }
-  .foryou li { margin: 0 0 6px; font-size: .95rem; }
+  .foryou li { margin: 0 0 6px; font-size: .94rem; }
   .foryou li:last-child { margin-bottom: 0; }
 
-  .alert { margin: 0 0 16px; padding: 12px 14px; border-radius: 10px; background: var(--alert-soft);
-           color: var(--alert); font-size: .9rem; }
-  .alert a { font-weight: 600; }
-  .alert pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .78rem; margin: 8px 0 0; color: var(--text); }
+  .alert { margin: 0 0 16px; padding: 12px 14px; background: var(--alert-soft); color: var(--alert); font-size: .9rem; }
+  .alert a { font-weight: 700; }
+  .alert pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .78rem; margin: 8px 0 0; color: var(--ink); }
 
   /* Data tiles */
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; margin: 0 0 22px; }
-  .tile { display: block; padding: 12px 12px 10px; background: var(--surface); border: 1px solid var(--line);
-          border-radius: 12px; text-decoration: none; }
-  .tile-name { font-size: .8rem; font-weight: 600; line-height: 1.3; }
-  .tile-sub { font-size: .7rem; color: var(--muted); }
-  .tile-val { margin-top: 6px; font-size: 1.25rem; font-weight: 650; letter-spacing: -.01em; }
-  .tile-chg { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 2px; font-size: .74rem; }
-  .pill { display: inline-block; padding: 1px 6px; border-radius: 6px; font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px;
+           margin: 0 0 22px; background: var(--rule); border: 1px solid var(--rule); }
+  .tile { display: block; padding: 11px 12px 10px; background: var(--card); text-decoration: none; }
+  .tile-name { font-size: .78rem; font-weight: 700; line-height: 1.3; }
+  .tile-sub { font-size: .68rem; color: var(--faint); }
+  .tile-val { margin-top: 5px; font-size: 1.22rem; font-weight: 700; letter-spacing: -.01em; }
+  .tile-chg { display: flex; flex-wrap: wrap; gap: 3px 8px; margin-top: 2px; font-size: .72rem; font-weight: 600; }
+  .pill { display: inline-block; padding: 0 5px; border-radius: 3px; }
   .pill.up { background: var(--up-soft); } .pill.down { background: var(--down-soft); }
-  .tile svg { display: block; width: 100%; height: 28px; margin-top: 8px; }
-  .tile-empty { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+  .tile svg { display: block; width: 100%; height: 26px; margin-top: 7px; }
+  .tile-empty { color: var(--faint); font-size: .78rem; margin-top: 8px; }
 
-  /* Articles */
-  .sub { margin: 26px 0 4px; }
+  /* Stories */
+  .label { margin: 26px 0 0; padding-top: 8px; border-top: 1px solid var(--rule-strong); }
   .stories { list-style: none; margin: 0; padding: 0; }
-  .stories li { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .stories li { padding: 13px 0; border-bottom: 1px solid var(--rule); }
   .stories li:last-child { border-bottom: 0; }
-  .stories a.hl { display: block; font: 600 1.04rem/1.38 var(--serif); text-decoration: none; }
+  .stories .src { font: 700 .66rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+  .stories a.hl { display: block; margin-top: 3px; font: 600 1.06rem/1.32 var(--serif); text-decoration: none; }
   .stories a.hl:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .stories .meta { margin-top: 4px; }
-  .multi { color: var(--accent); font-weight: 600; }
-  .why { margin-top: 6px; font-size: .9rem; color: var(--text-2); }
-  .why b { color: var(--accent); font-weight: 650; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; margin-right: 4px; }
-  .snippet { margin-top: 5px; font-size: .88rem; color: var(--text-2);
+  .stories .meta { margin-top: 3px; }
+  .why { margin-top: 5px; font-size: .9rem; color: var(--ink-2); }
+  .snippet { margin-top: 5px; font-size: .88rem; color: var(--ink-2);
              display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .empty { color: var(--muted); font-style: italic; font: italic 1rem var(--serif); }
+  .empty { margin: 4px 0; color: var(--muted); font: italic 1rem var(--serif); }
 
-  details { margin-top: 10px; }
-  details summary { cursor: pointer; list-style: none; font-size: .82rem; font-weight: 600; color: var(--muted); padding: 8px 0; }
+  details { margin-top: 6px; }
+  details summary { cursor: pointer; list-style: none; padding: 10px 0; font: 700 .7rem/1 var(--sans);
+                    letter-spacing: .08em; text-transform: uppercase; color: var(--claret); }
   details summary::-webkit-details-marker { display: none; }
-  details summary::before { content: "+ "; }
-  details[open] summary::before { content: "− "; }
-  .older li { padding: 9px 0; }
-  .older a.hl { font-size: .93rem; font-weight: 500; }
-  .watching { margin-top: 14px; font-size: .78rem; color: var(--muted); }
+  details summary::after { content: " +"; }
+  details[open] summary::after { content: " −"; }
+  .older a.hl { font-size: .94rem; font-weight: 500; }
+  .watching { margin-top: 14px; font-size: .76rem; color: var(--muted); }
   .watching a { color: var(--muted); }
-  .errors ul { margin: 0; padding-left: 18px; font-size: .75rem; color: var(--muted); }
-
-  @media (min-width: 700px) {
-    .masthead { padding-top: 40px; }
-    .lead li { font-size: 1.15rem; }
-  }
+  .errors ul { margin: 0; padding-left: 18px; font-size: .74rem; color: var(--muted); }
+  .errors summary { color: var(--faint); }
 </style>
 </head>
 <body>
 {%- macro story(i) %}
       <li>
+        <div class="src">{{ i.sources[0] }}{% if i.sources | length > 1 %} +{{ i.sources | length - 1 }}{% endif %}</div>
         <a class="hl" href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
-        <div class="meta">{{ i.sources[0] }}{% if i.sources | length > 1 %} <span class="multi">+{{ i.sources | length - 1 }} more</span>{% endif %} · {{ i.published | shortdate }}</div>
-        {% if i.note %}<div class="why"><b>Why it matters</b>{{ i.note }}</div>
+        {% if i.note %}<div class="why">{{ i.note }}</div>
         {% elif i.snippet %}<div class="snippet">{{ i.snippet }}</div>{% endif %}
+        <div class="meta">{{ i.published | shortdate }}</div>
       </li>
 {%- endmacro %}
-{%- set quote_secs = d.sections | selectattr("quotes") | list -%}
-{%- set rate_secs = d.sections | selectattr("rates") | list -%}
+{%- set ticks = [] -%}
+{%- for s in d.sections %}{% for q in s.quotes or [] if q.price is not none %}{% set _ = ticks.append(q) %}{% endfor %}{% endfor -%}
+{%- set rate_ticks = [] -%}
+{%- for s in d.sections %}{% for r in (s.rates or [])[:4] if r.value is not none %}{% set _ = rate_ticks.append(r) %}{% endfor %}{% endfor -%}
 
 <header class="appbar">
   <div class="wrap">
     <div class="appbar-row">
-      <a class="brand" href="index.html">The Daily Brief<span>.</span></a>
-      <div class="actions">
-        <button class="icon-btn refresh" type="button" aria-label="Refresh" onclick="location.reload()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-        </button>
-        <a class="icon-btn" href="archive.html" aria-label="Archive">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
-        </a>
-      </div>
+      <a class="icon-btn" href="archive.html" aria-label="Past editions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
+      </a>
+      <a class="brand" href="#today" data-tab="today">The Daily Brief<span>.</span></a>
+      <button class="icon-btn refresh" type="button" aria-label="Refresh" onclick="location.reload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
     </div>
     <nav class="tabs" aria-label="Sections">
-      {% if d.top %}<a href="#top">Briefing</a>{% endif %}
-      {% for s in d.sections %}<a href="#{{ s.id }}">{{ s.short or s.title }}{% if s.new_count %}<span class="count num">{{ s.new_count }}</span>{% endif %}</a>{% endfor %}
+      <a href="#today" data-tab="today">Today</a>
+      {% for s in d.sections %}<a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.short or s.title }}{% if s.new_count %}<span class="count num">{{ s.new_count }}</span>{% endif %}</a>{% endfor %}
     </nav>
   </div>
 </header>
 
+{% if ticks or rate_ticks %}
+<div class="ticker" aria-label="Markets">
+  <div class="wrap"><div class="ticker-row">
+    {% for q in ticks %}
+    <div class="tick num"><span class="tick-name">{{ q.name }}</span><span class="tick-val">{{ q.price | price }}</span>{% if q.d1 is not none %}<span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span>{% endif %}</div>
+    {% endfor %}
+    {% for r in rate_ticks %}
+    <div class="tick num"><span class="tick-name">{{ r.name }}</span><span class="tick-val">{{ "{:.2f}".format(r.value) }}%</span>{% if r.m1 is not none %}<span class="{{ r.m1 | updown }}">{{ r.m1 | bp }}</span>{% endif %}</div>
+    {% endfor %}
+  </div></div>
+</div>
+{% endif %}
+
 <main class="wrap">
-  <div class="masthead" id="top">
-    <div class="kicker">Morning edition</div>
-    <h1>{{ d.date_label }}</h1>
-    <div class="edition meta">
-      <span>Edition {{ d.generated_label }}</span>
-      <span class="num">{{ d.sections | sum(attribute="new_count") }} new stories</span>
-      <span>{{ d.sections | length }} sections</span>
-    </div>
-    <div class="offline">You're offline — showing the last saved edition.</div>
-  </div>
 
-  {%- set strip = [] -%}
-  {%- for s in quote_secs %}{% for q in s.quotes if q.price is not none and (q.symbol.startswith("^") or "=" in q.symbol) %}{% set _ = strip.append(q) %}{% endfor %}{% endfor -%}
-  {%- set strip_rates = [] -%}
-  {%- for s in rate_secs %}{% for r in s.rates[:2] if r.value is not none %}{% set _ = strip_rates.append(r) %}{% endfor %}{% endfor -%}
-  {% if strip or strip_rates %}
-  <div class="strip" aria-label="Markets">
-    {% for q in strip %}
-    <div class="strip-item">
-      <div class="strip-name">{{ q.name }}</div>
-      <div class="strip-val num">{{ q.price | price }}</div>
-      {% if q.d1 is not none %}<div class="chg num {{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</div>{% endif %}
-    </div>
-    {% endfor %}
-    {% for r in strip_rates %}
-    <div class="strip-item">
-      <div class="strip-name">{{ r.name }}</div>
-      <div class="strip-val num">{{ "{:.2f}%".format(r.value) }}</div>
-      {% if r.m1 is not none %}<div class="chg num {{ r.m1 | updown }}">{{ r.m1 | bp }} 1M</div>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <article class="panel" id="tab-today" data-panel="today">
+    <div class="dateline"><span>{{ d.date_label }}</span><span>Edition {{ d.generated_label }}</span></div>
+    <h1 class="front-title">Today's brief</h1>
+    <div class="meta">{{ d.sections | sum(attribute="new_count") }} new stories across {{ d.sections | length }} sections</div>
+    <div class="offline">You're offline. Showing the last saved edition.</div>
 
-  {% if d.top %}
-  <div class="lead">
-    <div class="kicker">In one minute</div>
-    <ol>{% for b in d.top %}<li>{{ b }}</li>{% endfor %}</ol>
-  </div>
-  {% endif %}
+    {% if d.top %}
+    <div class="minute">
+      <div class="kicker" style="color:var(--claret)">In one minute</div>
+      <ol>
+        {% for b in d.top %}
+        {% if b is mapping %}
+        {% set sec = d.sections | selectattr("id", "equalto", b.section) | first %}
+        <li><div class="kicker"><a href="#{{ b.section }}" data-tab="{{ b.section }}">{{ sec.short or sec.title if sec else b.section }}</a></div><p>{{ b.text }}</p></li>
+        {% else %}<li><p>{{ b }}</p></li>{% endif %}
+        {% endfor %}
+      </ol>
+    </div>
+    {% endif %}
+
+    <div class="cards">
+      {% for s in d.sections %}
+      {% set lead = s.briefing.summary | lead if s.briefing else none %}
+      {% set fresh = s["items"] | selectattr("is_new") | list %}
+      <div class="card">
+        <div class="kicker">{{ s.short or s.title }}</div>
+        {% if lead and lead.head %}
+        <a class="card-title" href="#{{ s.id }}" data-tab="{{ s.id }}">{{ lead.head }}</a>
+        {% if lead.body %}<p class="standfirst">{{ lead.body }}</p>{% endif %}
+        {% elif fresh %}
+        <a class="card-title" href="{{ fresh[0].link }}" target="_blank" rel="noopener">{{ fresh[0].title }}</a>
+        {% else %}
+        <p class="empty">Nothing new today.</p>
+        {% endif %}
+        {% if fresh %}
+        <ul>{% for i in fresh[(0 if lead and lead.head else 1):][:2] %}<li><a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a></li>{% endfor %}</ul>
+        {% endif %}
+        <a class="more" href="#{{ s.id }}" data-tab="{{ s.id }}">Open {{ s.short or s.title }} →</a>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
 
   {% for s in d.sections %}
-  <section id="{{ s.id }}">
-    <div class="sec-head">
-      <span class="sec-num">{{ "%02d" | format(loop.index) }}</span>
+  <article class="panel" id="tab-{{ s.id }}" data-panel="{{ s.id }}">
+    <div class="panel-head">
+      <div class="kicker">{{ s.short or s.title }}</div>
       <h2>{{ s.title }}</h2>
+      <div class="meta">{{ s.new_count }} new stor{{ "y" if s.new_count == 1 else "ies" }} · {{ d.date_label }}</div>
     </div>
 
     {% for p in s.pages if p.status in ("changed", "error") %}
@@ -233,7 +271,7 @@
     <div class="brief">{{ s.briefing.summary | md }}</div>
     {% if s.briefing.for_you %}
     <div class="foryou">
-      <div class="kicker">What it means for us</div>
+      <div class="kicker">What it means for you</div>
       <ul>{% for f in s.briefing.for_you %}<li>{{ f }}</li>{% endfor %}</ul>
     </div>
     {% endif %}
@@ -242,13 +280,11 @@
     {% set new_items = s["items"] | selectattr("is_new") | list %}
     {% set old_items = s["items"] | rejectattr("is_new") | list %}
     {% if new_items %}
-    <div class="kicker sub">Stories</div>
-    <ul class="stories">
-      {% for i in new_items[:5] %}{{ story(i) }}{% endfor %}
-    </ul>
-    {% if new_items | length > 5 %}
-    <details><summary>More stories ({{ new_items[5:s.max_items] | length }})</summary>
-      <ul class="stories">{% for i in new_items[5:s.max_items] %}{{ story(i) }}{% endfor %}</ul>
+    <div class="kicker label">Stories</div>
+    <ul class="stories">{% for i in new_items[:6] %}{{ story(i) }}{% endfor %}</ul>
+    {% if new_items | length > 6 %}
+    <details><summary>More stories ({{ new_items[6:s.max_items] | length }})</summary>
+      <ul class="stories">{% for i in new_items[6:s.max_items] %}{{ story(i) }}{% endfor %}</ul>
     </details>
     {% endif %}
     {% elif not s.briefing %}
@@ -259,8 +295,8 @@
     <details><summary>Already in earlier editions ({{ old_items | length }})</summary>
       <ul class="stories older">
         {% for i in old_items[:30] %}
-        <li><a class="hl" href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
-          <div class="meta">{{ i.sources[0] }} · {{ i.published | shortdate }}</div></li>
+        <li><div class="src">{{ i.sources[0] }}</div><a class="hl" href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
+          <div class="meta">{{ i.published | shortdate }}</div></li>
         {% endfor %}
       </ul>
     </details>
@@ -276,7 +312,7 @@
     <details class="errors"><summary>{{ s.errors | length }} source{{ "s" if s.errors | length > 1 }} unavailable</summary>
       <ul>{% for e in s.errors %}<li>{{ e }}</li>{% endfor %}</ul></details>
     {% endif %}
-  </section>
+  </article>
   {% endfor %}
 
   <footer>
@@ -287,25 +323,55 @@
 </main>
 
 <script>
-  // Highlight the section tab currently on screen.
+  // Tabs: show one section at a time, remember the last one per device, swipe to switch.
   (() => {
+    const KEY = "brief-tab";
+    const panels = [...document.querySelectorAll(".panel")];
+    const ids = panels.map(p => p.dataset.panel);
     const tabs = [...document.querySelectorAll(".tabs a")];
-    const byId = Object.fromEntries(tabs.map(a => [a.hash.slice(1), a]));
-    const targets = tabs.map(a => document.getElementById(a.hash.slice(1))).filter(Boolean);
+    const nav = document.querySelector(".tabs");
     let current = null;
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        const tab = byId[e.target.id];
-        if (!tab || tab === current) continue;
-        current?.classList.remove("active");
-        tab.classList.add("active"); current = tab;
-        // Scroll only the tab row (scrollIntoView could also nudge the page on iOS).
-        const nav = tab.parentElement;
-        nav.scrollTo({ left: tab.offsetLeft - (nav.clientWidth - tab.clientWidth) / 2, behavior: "smooth" });
-      }
-    }, { rootMargin: "-120px 0px -65% 0px" });
-    targets.forEach(t => io.observe(t));
+
+    function show(id, { save = true } = {}) {
+      if (!ids.includes(id)) id = "today";
+      panels.forEach(p => p.classList.toggle("active", p.dataset.panel === id));
+      tabs.forEach(a => a.classList.toggle("active", a.dataset.tab === id));
+      const tab = tabs.find(a => a.dataset.tab === id);
+      if (tab) nav.scrollTo({ left: tab.offsetLeft - (nav.clientWidth - tab.clientWidth) / 2, behavior: current ? "smooth" : "auto" });
+      if (save) { try { localStorage.setItem(KEY, id); } catch (e) {} }
+      if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+      if (current && current !== id) window.scrollTo({ top: 0 });
+      current = id;
+    }
+
+    document.addEventListener("click", e => {
+      const a = e.target.closest("a[data-tab]");
+      if (!a) return;
+      e.preventDefault();
+      show(a.dataset.tab);
+    });
+    addEventListener("hashchange", () => show(location.hash.slice(1)));
+
+    let saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    show(location.hash.slice(1) || saved || "today", { save: false });
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+    // Swipe left/right on the content to move between tabs.
+    let x0 = null, y0 = null;
+    const main = document.querySelector("main");
+    main.addEventListener("touchstart", e => {
+      if (e.target.closest(".tiles, pre")) { x0 = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    }, { passive: true });
+    main.addEventListener("touchend", e => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+      const i = ids.indexOf(current) + (dx < 0 ? 1 : -1);
+      if (i >= 0 && i < ids.length) show(ids[i]);
+    }, { passive: true });
   })();
 </script>
 </body>

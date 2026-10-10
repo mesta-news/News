@@ -4,34 +4,19 @@
 # ---------------------------------------------------------------------------
 
 # Who the digest is for. Sent ONLY to Claude, never shown on the page.
-# This repo is public, so keep it free of names and contact details. To keep it
-# private, put the text in a GitHub secret named DIGEST_PROFILE instead; the
-# secret takes precedence over this field.
+# The detailed version lives in the GitHub secret DIGEST_PROFILE (this repo is
+# public), which takes precedence. This general version is the fallback.
 profile: |
-  We are a couple living in Utrecht, the Netherlands.
-  - My wife is a medical doctor (MD) with a non-EU diploma and EU work
-    authorization (EU family member). Experience: ~4 years of clinical work as
-    a general practitioner (internships, residency rotations, COVID follow-up
-    care), then 2 years in pharma as a medical trainer / scientific
-    communication specialist (built training from clinical trial publications,
-    80+ seminars, worked with brand, clinical affairs and sales). She is
-    ICH-GCP certified, is doing a course on design and interpretation of
-    clinical trials, and is building healthcare data skills (Excel, clinical
-    data validation). Languages: Arabic (native), English, French, German
-    (medical C1), Dutch (beginner, learning).
-  - She is NOT pursuing BIG registration for now. She is targeting
-    non-clinical roles in clinical research and life sciences in the
-    Netherlands: Clinical Research Associate / Clinical Trial Assistant,
-    clinical operations, medical affairs, medical information, medical science
-    liaison, pharmacovigilance / drug safety, medical training and
-    communication, clinical data. Employers of interest: CROs, pharma and
-    biotech (especially around Utrecht, Leiden and Amsterdam), and
-    organisations like the EMA in Amsterdam.
-  - I build software with AI and want to sharpen my skills: new model
-    capabilities, tools, APIs, techniques and practical patterns I can use.
-  - We don't hold stocks yet; we follow a watchlist (Wolters Kluwer, AI
-    companies, broad indexes such as the S&P 500) and general business news.
-    We think in euros.
+  A couple living in Utrecht, the Netherlands, who read this brief separately.
+  - She is a foreign-trained medical doctor looking for non-clinical roles in
+    clinical research and life sciences in the Netherlands (CRA, clinical
+    operations, medical affairs, medical information, pharmacovigilance). She
+    is not pursuing BIG registration for now. Her tabs: Careers, Clinical
+    research, BIG.
+  - He is a financial risk manager specialised in asset-liability management
+    (ALM) at a Dutch retail bank (mortgages and savings), and builds software
+    with AI. His tabs: Banking, Rates, Markets, Business, AI.
+  - No stock holdings yet; they follow a watchlist and think in euros.
 
 # Claude model used for the summaries (only if ANTHROPIC_API_KEY is set).
 model: claude-opus-5-5
@@ -83,66 +68,6 @@ sections:
       - { q: 'pharmacovigilance OR "drug safety" OR "medical affairs" industry trends', lang: en }
       - { q: 'klinisch onderzoek Nederland geneesmiddelen studie', lang: nl }
 
-  - id: ai
-    title: "AI - models, tools & techniques"
-    short: "AI"
-    max_age_days: 3
-    max_items: 20
-    feeds:
-      - { name: "OpenAI", url: "https://openai.com/news/rss.xml" }
-      - { name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml" }
-      - { name: "Google AI blog", url: "https://blog.google/technology/ai/rss/" }
-      - { name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml" }
-      - { name: "Simon Willison", url: "https://simonwillison.net/atom/everything/" }
-      - { name: "Latent Space", url: "https://www.latent.space/feed" }
-      - { name: "Hacker News (AI, 150+ pts)", url: "https://hnrss.org/newest?q=LLM+OR+Claude+OR+Anthropic+OR+OpenAI+OR+GPT+OR+Gemini+OR+agent&points=150" }
-    google_news:
-      - { q: 'Anthropic Claude', lang: en }
-      - { q: 'OpenAI OR ChatGPT new model OR launch', lang: en }
-      - { q: 'Google Gemini OR "DeepMind" model launch', lang: en }
-      - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
-
-  - id: watchlist
-    title: "Markets & watchlist"
-    short: "Markets"
-    max_age_days: 4
-    max_items: 20
-    # Feeds for this section are generated from the watchlist below
-    # (each entry's `news` query + Yahoo Finance headlines).
-
-  - id: rates
-    title: "Interest rates & central banks"
-    short: "Rates"
-    max_age_days: 4
-    max_items: 15
-    feeds:
-      - { name: "ECB press releases", url: "https://www.ecb.europa.eu/rss/press.html" }
-      - { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml" }
-      - { name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" }
-    google_news:
-      - { q: 'ECB interest rates OR "rate decision" OR Lagarde', lang: en }
-      - { q: '"Federal Reserve" OR Fed rate cut OR "rate hike" OR Powell', lang: en }
-      - { q: '"Bank of England" OR "Bank of Japan" OR "People''s Bank of China" OR SNB interest rate', lang: en }
-      - { q: 'bond yields Treasury OR Bund OR "rate expectations"', lang: en }
-      - { q: 'rente ECB OR hypotheekrente OR spaarrente', lang: nl }
-    # Data for the rate tiles comes from the `rates:` list below.
-
-  - id: business
-    title: "Business & markets"
-    short: "Business"
-    max_age_days: 2
-    max_items: 20
-    feeds:
-      - { name: "Google News - Business", url: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en" }
-      - { name: "CNBC Top News", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114" }
-      - { name: "BBC Business", url: "https://feeds.bbci.co.uk/news/business/rss.xml" }
-      - { name: "MarketWatch", url: "https://feeds.content.dowjones.io/public/rss/mw_topstories" }
-      - { name: "NOS Economie", url: "https://feeds.nos.nl/nosnieuwseconomie" }
-    google_news:
-      - { q: 'site:reuters.com markets OR economy OR business', lang: en }
-      - { q: 'site:bloomberg.com markets OR economy', lang: en }
-      - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
-
   - id: big
     title: "BIG register & diploma recognition"
     short: "BIG"
@@ -165,6 +90,87 @@ sections:
       - { name: "BIG-register (home)", url: "https://www.bigregister.nl/" }
       - { name: "BIG-register - English", url: "https://english.bigregister.nl/" }
 
+  - id: banking
+    title: "Dutch banking & ALM"
+    short: "Banking"
+    max_age_days: 5
+    max_items: 15
+    feeds:
+      - { name: "ECB Banking Supervision", url: "https://www.bankingsupervision.europa.eu/rss/press.html" }
+    google_news:
+      # Dutch banks and the savings/mortgage market
+      - { q: 'ING OR "ABN AMRO" OR Rabobank OR "de Volksbank" OR Triodos OR "Van Lanschot" bank', lang: nl }
+      - { q: '"Brand New Day" bank OR hypotheek OR pensioen', lang: nl }
+      - { q: 'spaarrente OR hypotheekrente verhoogt OR verlaagt bank', lang: nl }
+      - { q: 'Dutch banks net interest income OR mortgages OR deposits OR results', lang: en }
+      # Supervision and regulation
+      - { q: 'DNB toezicht banken OR "De Nederlandsche Bank" OR "financiële stabiliteit"', lang: nl }
+      - { q: 'IRRBB OR "interest rate risk in the banking book" OR "net interest income" EBA OR ECB', lang: en }
+      - { q: 'EBA OR "ECB supervision" OR "Basel III" OR CRR3 banks liquidity OR capital', lang: en }
+      # Curve, pension reform, housing
+      - { q: 'Wtp pensioenfondsen transitie swaprente OR rentecurve OR "lange rente"', lang: nl }
+      - { q: 'euro swap rates OR "swap curve" OR Euribor OR €STR pension funds', lang: en }
+      - { q: 'huizenprijzen OR woningmarkt OR hypotheekmarkt Kadaster OR CBS OR NHG', lang: nl }
+
+  - id: rates
+    title: "Interest rates & central banks"
+    short: "Rates"
+    max_age_days: 4
+    max_items: 15
+    feeds:
+      - { name: "ECB press releases", url: "https://www.ecb.europa.eu/rss/press.html" }
+      - { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml" }
+      - { name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" }
+    google_news:
+      - { q: 'ECB interest rates OR "rate decision" OR Lagarde', lang: en }
+      - { q: '"Federal Reserve" OR Fed rate cut OR "rate hike" OR Powell', lang: en }
+      - { q: '"Bank of England" OR "Bank of Japan" OR "People''s Bank of China" OR SNB interest rate', lang: en }
+      - { q: 'bond yields Treasury OR Bund OR "rate expectations"', lang: en }
+      - { q: 'rente ECB OR hypotheekrente OR spaarrente', lang: nl }
+    # Data for the rate tiles comes from the `rates:` list below.
+
+  - id: watchlist
+    title: "Markets & watchlist"
+    short: "Markets"
+    max_age_days: 4
+    max_items: 20
+    # Feeds for this section are generated from the watchlist below
+    # (each entry's `news` query + Yahoo Finance headlines).
+
+  - id: business
+    title: "Business & markets"
+    short: "Business"
+    max_age_days: 2
+    max_items: 20
+    feeds:
+      - { name: "Google News - Business", url: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en" }
+      - { name: "CNBC Top News", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114" }
+      - { name: "BBC Business", url: "https://feeds.bbci.co.uk/news/business/rss.xml" }
+      - { name: "MarketWatch", url: "https://feeds.content.dowjones.io/public/rss/mw_topstories" }
+      - { name: "NOS Economie", url: "https://feeds.nos.nl/nosnieuwseconomie" }
+    google_news:
+      - { q: 'site:reuters.com markets OR economy OR business', lang: en }
+      - { q: 'site:bloomberg.com markets OR economy', lang: en }
+      - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
+
+  - id: ai
+    title: "AI - models, tools & techniques"
+    short: "AI"
+    max_age_days: 3
+    max_items: 20
+    feeds:
+      - { name: "OpenAI", url: "https://openai.com/news/rss.xml" }
+      - { name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml" }
+      - { name: "Google AI blog", url: "https://blog.google/technology/ai/rss/" }
+      - { name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml" }
+      - { name: "Simon Willison", url: "https://simonwillison.net/atom/everything/" }
+      - { name: "Latent Space", url: "https://www.latent.space/feed" }
+      - { name: "Hacker News (AI, 150+ pts)", url: "https://hnrss.org/newest?q=LLM+OR+Claude+OR+Anthropic+OR+OpenAI+OR+GPT+OR+Gemini+OR+agent&points=150" }
+    google_news:
+      - { q: 'Anthropic Claude', lang: en }
+      - { q: 'OpenAI OR ChatGPT new model OR launch', lang: en }
+      - { q: 'Google Gemini OR "DeepMind" model launch', lang: en }
+      - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
 
 # ---------------------------------------------------------------------------
 # Key interest rates - series IDs from FRED (https://fred.stlouisfed.org).
@@ -172,6 +178,8 @@ sections:
 # ---------------------------------------------------------------------------
 rates:
   - { id: "ECBDFR",          name: "ECB deposit rate",       region: "Eurozone" }
+  - { id: "ECBESTRVOLWGTTRMDMNRT", name: "€STR",              region: "Eurozone overnight" }
+  - { id: "IR3TIB01EZM156N", name: "3M Euribor",             region: "Eurozone · monthly" }
   - { id: "DFEDTARU",        name: "Fed funds (upper)",      region: "United States" }
   - { id: "IUDSOIA",         name: "SONIA overnight",        region: "United Kingdom" }
   - { id: "IRSTCB01JPM156N", name: "BoJ policy rate",        region: "Japan · monthly" }
@@ -191,6 +199,8 @@ watchlist:
   - { symbol: "^AEX",    name: "AEX (Amsterdam)" }
   - { symbol: "EURUSD=X", name: "EUR/USD" }
   - { symbol: "WKL.AS",  name: "Wolters Kluwer", news: '"Wolters Kluwer"' }
+  - { symbol: "INGA.AS",  name: "ING",            news: 'ING Groep results OR shares' }
+  - { symbol: "ABN.AS",   name: "ABN AMRO",       news: '"ABN AMRO" results OR shares' }
   - { symbol: "ASML.AS", name: "ASML",           news: 'ASML' }
   - { symbol: "NVDA",    name: "Nvidia",         news: 'Nvidia stock OR earnings' }
   - { symbol: "MSFT",    name: "Microsoft",      news: 'Microsoft stock OR earnings OR AI' }

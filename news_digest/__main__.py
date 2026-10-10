@@ -12,6 +12,7 @@ import html
 import json
 import logging
 import os
+import re
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -180,11 +181,22 @@ def _shortdate(iso: str | None) -> str:
         return ""
 
 
+def _lead(summary: str | None) -> dict:
+    """Split a briefing's first bullet into a headline (its bold lead-in) and the rest."""
+    first = next((ln.strip()[2:] for ln in (summary or "").splitlines()
+                  if ln.strip().startswith(("- ", "* "))), (summary or "").strip())
+    m = re.match(r"\*\*(.+?)\*\*[\s:.\-–—]*(.*)", first)
+    if m:
+        return {"head": m.group(1).strip().rstrip(".:"), "body": m.group(2).strip()}
+    head, _, body = first.partition(". ")
+    return {"head": head.replace("**", "").strip(), "body": body.replace("**", "").strip()}
+
+
 def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
-                       bp=_bp, shortdate=_shortdate)
+                       bp=_bp, shortdate=_shortdate, lead=_lead)
     return env
 
 

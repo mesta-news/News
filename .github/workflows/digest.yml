@@ -6,7 +6,7 @@ on:
   workflow_dispatch:        # "Run workflow" button in the Actions tab
   push:
     branches: [main]
-    paths: ["config.yaml", "news_digest/**"]
+    paths: ["config.yaml", "news_digest/**", ".github/workflows/**"]
 
 permissions:
   contents: write   # commit data/ and state/ back to the repo
