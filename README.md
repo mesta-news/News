@@ -51,10 +51,14 @@ This repo is public, so two optional switches keep your brief private:
   `DATA_REPO_TOKEN`. The next run moves `data/` and `state/` there and deletes
   them from this repo; after that the daily editions live only in the private
   repo. (Old copies remain in this repo's git history until it is rewritten.)
-* **Passphrase.** Set the secret `SITE_PASSPHRASE`. Every page and the search
-  index are then published encrypted (AES-GCM, key from PBKDF2); each phone asks
-  for the passphrase once and remembers the derived key. Settings has "Lock
-  this phone". The calendar feed and notifications are not encrypted.
+* **Passphrase (simplest: this alone is enough).** Set the secret
+  `SITE_PASSPHRASE`. Every page and the search index are then published
+  encrypted (AES-GCM, key from PBKDF2); each phone asks for the passphrase once
+  and remembers the derived key ("Lock this phone" in Settings). The saved
+  editions and state in `data/` and `state/` are also stored encrypted with it,
+  so this public repo only holds ciphertext. Keep the passphrase somewhere safe:
+  without it the saved history can't be read. The calendar feed and
+  notifications are not encrypted.
 
 ## Settings
 
