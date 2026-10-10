@@ -50,6 +50,20 @@ def save_json(path: Path, data) -> None:
 
 # --------------------------------------------------------------------------- build
 
+def _balance(items: list[dict], groups: list[str] | None) -> list[dict]:
+    """Interleave ranked items by group so one busy group can't crowd out the others."""
+    if not groups:
+        return items
+    queues = {g: [i for i in items if i.get("group") == g] for g in groups}
+    rest = [i for i in items if i.get("group") not in queues]
+    out = []
+    while any(queues.values()):
+        for g in groups:
+            if queues[g]:
+                out.append(queues[g].pop(0))
+    return out + rest
+
+
 def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
     now = datetime.now(timezone.utc)
     today = now.astimezone(TZ).date().isoformat()
@@ -59,8 +73,12 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
     page_state: dict = load_json(pages_path, {})
     watchlist = cfg.get("watchlist") or []
 
+    def instruments(sec: dict) -> list[dict]:
+        """Price tiles of a section: its own `quotes:` list, or the global watchlist."""
+        return sec.get("quotes") or (watchlist if sec["id"] == "watchlist" else [])
+
     def build_section(sec: dict) -> dict:
-        items, errors = sources.collect(sec, watchlist, now)
+        items, errors = sources.collect(sec, instruments(sec), now)
         for it in items:
             first = seen.setdefault(it.id, today)
             it.is_new = first == today  # re-running on the same day keeps items "new"
@@ -76,11 +94,15 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
 
     for sec_cfg, sec in zip(cfg["sections"], sections):
         # Keep the top new articles plus already-shown ones for the "earlier" list.
-        sec["items"] = [i for i in sec["items"] if i["is_new"]][: sec["max_items"]] + \
-            [i for i in sec["items"] if not i["is_new"]]
+        fresh = _balance([i for i in sec["items"] if i["is_new"]], sec_cfg.get("groups"))
+        sec["items"] = fresh[: sec["max_items"]] + [i for i in sec["items"] if not i["is_new"]]
+        if sec_cfg.get("groups"):
+            sec["groups"] = sec_cfg["groups"]
+        if sec_cfg.get("rates_label"):
+            sec["rates_label"] = sec_cfg["rates_label"]
         sec["pages"] = pages.check(sec_cfg.get("watch_pages") or [], page_state, today)
-        if sec["id"] == "watchlist":
-            sec["quotes"], err = markets.quotes(watchlist, now.astimezone(TZ))
+        if instruments(sec_cfg):
+            sec["quotes"], err = markets.quotes(instruments(sec_cfg), now.astimezone(TZ))
             if err:
                 sec["errors"].append(err)
         # Rate tiles: a section's own `rates:` list, or the global one for the rates tab.

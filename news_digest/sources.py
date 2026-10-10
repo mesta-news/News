@@ -22,6 +22,7 @@ TIMEOUT = 20
 GOOGLE_NEWS_LOCALES = {
     "nl": ("nl", "NL", "NL:nl"),
     "en": ("en-US", "US", "US:en"),
+    "fr": ("fr", "MA", "MA:fr"),  # French-language edition for Morocco
 }
 
 
@@ -36,6 +37,7 @@ class Item:
     sources: list[str] = field(default_factory=list)
     is_new: bool = True
     note: str = ""  # filled in by the AI summariser
+    group: str = ""  # optional sub-heading within a section (e.g. "Morocco")
 
     def to_dict(self) -> dict:
         return {
@@ -48,6 +50,7 @@ class Item:
             "sources": self.sources,
             "is_new": self.is_new,
             "note": self.note,
+            "group": self.group,
         }
 
 
@@ -60,15 +63,19 @@ def google_news_url(query: str, lang: str = "en") -> str:
 
 
 def feeds_for_section(section: dict, watchlist: list[dict]) -> list[dict]:
-    """All feed definitions ({name, url}) for a section."""
+    """All feed definitions ({name, url}) for a section.
+
+    `watchlist` is the list of instruments whose company news the section follows
+    (entries with a `news` query, plus Yahoo Finance headlines for stocks).
+    """
     feeds = list(section.get("feeds") or [])
     for g in section.get("google_news") or []:
         feed = {"name": f"Google News ({g.get('lang', 'en')})",
                 "url": google_news_url(g["q"], g.get("lang", "en"))}
         # Optional per-query filters override the section's.
-        feed.update({k: g[k] for k in ("keywords", "max_age_days") if k in g})
+        feed.update({k: g[k] for k in ("keywords", "max_age_days", "group") if k in g})
         feeds.append(feed)
-    if section.get("id") == "watchlist":
+    if watchlist:
         for w in watchlist:
             if w.get("news"):
                 feeds.append({"name": f"Google News - {w['name']}",
@@ -141,7 +148,7 @@ def fetch_feed(feed: dict) -> tuple[list[Item], str | None]:
         items.append(Item(
             id=hashlib.sha1(_title_key(title).encode()).hexdigest()[:12],
             title=title, link=link, source=source, published=published,
-            snippet=snippet, sources=[source],
+            snippet=snippet, sources=[source], group=feed.get("group", ""),
         ))
     return items, None
 

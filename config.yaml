@@ -12,10 +12,11 @@ profile: |
     clinical research and life sciences in the Netherlands (CRA, clinical
     operations, medical affairs, medical information, pharmacovigilance). She
     is not pursuing BIG registration for now. Her tabs: Careers, Clinical
-    research, Medicine.
+    research, Medicine, World.
   - He is a financial risk manager specialised in asset-liability management
     (ALM) at a Dutch retail bank (mortgages and savings), and builds software
-    with AI. His tabs: Banking, Rates, Markets, Business, AI.
+    with AI. His tabs: Banking, Rates, Markets, Energy, Business, AI, World.
+  - Both also follow general news from the Netherlands, Morocco and the world.
   - No stock holdings yet; they follow a watchlist and think in euros.
 
 # Claude model used for the summaries (only if ANTHROPIC_API_KEY is set).
@@ -54,6 +55,9 @@ sections:
       # Roles she is targeting
       - { q: '"clinical research associate" OR "medical affairs" OR "medical science liaison" OR pharmacovigilance careers', lang: en }
       - { q: 'Holland Bio OR "Health~Holland" OR "life sciences" Nederland arbeidsmarkt', lang: nl }
+      - { q: 'vacature "clinical research associate" OR "medical advisor" OR "medical science liaison" OR "drug safety" Nederland', lang: nl }
+      - { q: '"medical affairs" OR "clinical operations" OR "pharmacovigilance" Netherlands OR Amsterdam OR Leiden OR Utrecht hiring', lang: en }
+      - { q: 'EMA Amsterdam vacancies OR "European Medicines Agency" recruitment OR traineeship', lang: en }
       # BIG register & diploma recognition (kept in case she reconsiders):
       # only articles that mention one of the keywords, from the last 3 weeks.
       - { q: '"BIG-register" OR "BIG-registratie" buitenlands OR buitenlandse', lang: nl, max_age_days: 21, keywords: [big-regist, big regist, big-registratie, buitenland, foreign, diploma, akv, bi-toets, cbgv, erkenning, recogni, internationa, migrant, taaltoets] }
@@ -76,6 +80,9 @@ sections:
       - { q: 'clinical trials Europe decentralised OR "real-world evidence" OR "AI in clinical trials"', lang: en }
       - { q: 'pharmacovigilance OR "drug safety" OR "medical affairs" industry trends', lang: en }
       - { q: 'klinisch onderzoek Nederland geneesmiddelen studie', lang: nl }
+      - { q: '"CHMP meeting highlights" OR "ACT EU" OR "Accelerating Clinical Trials in the EU"', lang: en }
+      - { q: 'EU pharma legislation OR "pharmaceutical package" OR "HTA regulation" OR "joint clinical assessment"', lang: en }
+      - { q: 'Zorginstituut pakket geneesmiddel OR "sluis" OR vergoeding dure geneesmiddelen', lang: nl }
 
   - id: medicine
     title: "Medical science & research"
@@ -88,11 +95,18 @@ sections:
       - { name: "The BMJ", url: "https://www.bmj.com/rss/recent.xml" }
       - { name: "Nature Medicine", url: "https://www.nature.com/nm.rss" }
       - { name: "STAT", url: "https://www.statnews.com/feed/" }
+      - { name: "JAMA", url: "https://jamanetwork.com/rss/site_3/67.xml" }
+      - { name: "FDA press releases", url: "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml" }
+      - { name: "Endpoints News", url: "https://endpts.com/feed/" }
+      - { name: "Fierce Biotech", url: "https://www.fiercebiotech.com/rss/xml" }
     google_news:
       - { q: '"phase 3" trial results OR "topline results" OR "met its primary endpoint"', lang: en }
       - { q: 'FDA approves OR "EMA recommends" OR "CHMP positive opinion" new drug', lang: en }
       - { q: 'NEJM OR Lancet OR JAMA OR BMJ study finds', lang: en }
       - { q: 'medisch onderzoek UMC Utrecht OR Amsterdam UMC OR LUMC OR Erasmus MC studie', lang: nl }
+      - { q: 'ESMO OR ASCO OR ESC OR EASD OR ASH congress late-breaking OR "presented at"', lang: en }
+      - { q: 'NHG-standaard OR richtlijn OR Gezondheidsraad advies OR RIVM', lang: nl }
+      - { q: 'GLP-1 OR obesity OR Alzheimer OR oncology "new data" OR "label expansion"', lang: en }
 
   - id: banking
     title: "Dutch banking & ALM"
@@ -150,6 +164,37 @@ sections:
     # Feeds for this section are generated from the watchlist below
     # (each entry's `news` query + Yahoo Finance headlines).
 
+  - id: energy
+    title: "Energy & commodities"
+    short: "Energy"
+    max_age_days: 3
+    max_items: 15
+    feeds:
+      - { name: "OilPrice.com", url: "https://oilprice.com/rss/main" }
+    google_news:
+      - { q: 'TTF gas price Europe OR "European gas" OR "gas storage"', lang: en }
+      - { q: 'oil prices Brent OR OPEC+ OR "crude oil"', lang: en }
+      - { q: 'LNG Europe imports OR supply OR "Henry Hub"', lang: en }
+      - { q: '"EU ETS" OR "carbon price" OR "EU carbon allowances" OR CBAM', lang: en }
+      - { q: 'European power prices OR electricity prices Germany OR Netherlands', lang: en }
+      - { q: 'site:iea.org OR "International Energy Agency" oil OR gas OR market report', lang: en }
+      - { q: 'energieprijzen OR energierekening OR gasprijs OR stroomprijs OR energietarieven', lang: nl }
+      - { q: 'Groningen gas OR Gasunie OR TenneT OR netcongestie OR "Noordzee wind"', lang: nl }
+    # Price tiles (Yahoo Finance). These also feed the ticker and company news.
+    quotes:
+      - { symbol: "BZ=F",     name: "Brent crude",      unit: "$/bbl",   group: "Oil & gas" }
+      - { symbol: "CL=F",     name: "WTI crude",        unit: "$/bbl",   group: "Oil & gas" }
+      - { symbol: "TTF=F",    name: "Dutch TTF gas",    unit: "€/MWh",   group: "Oil & gas" }
+      - { symbol: "NG=F",     name: "US natural gas",   unit: "$/MMBtu", group: "Oil & gas" }
+      - { symbol: "HO=F",     name: "Heating oil",      unit: "$/gal",   group: "Oil & gas" }
+      - { symbol: "SHELL.AS", name: "Shell",            group: "Energy stocks", news: 'Shell plc results OR shares OR LNG' }
+      - { symbol: "TTE.PA",   name: "TotalEnergies",    group: "Energy stocks", news: 'TotalEnergies results OR shares' }
+    # Energy inflation (ECB Data Portal) shows how prices reach households.
+    rates_label: "Energy inflation"
+    rates:
+      - { source: ecb, id: "ICP/M.U2.N.NRGY00.4.ANR", name: "Euro area energy inflation", region: "HICP energy, % y/y · monthly" }
+      - { source: ecb, id: "ICP/M.NL.N.NRGY00.4.ANR", name: "Dutch energy inflation",     region: "HICP energy, % y/y · monthly" }
+
   - id: business
     title: "Business & markets"
     short: "Business"
@@ -165,6 +210,30 @@ sections:
       - { q: 'site:reuters.com markets OR economy OR business', lang: en }
       - { q: 'site:bloomberg.com markets OR economy', lang: en }
       - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
+
+  - id: world
+    title: "Netherlands, Morocco & the world"
+    short: "World"
+    max_age_days: 2
+    max_items: 24
+    # Stories are shown under these headings, taking turns so each region gets space.
+    groups: ["Netherlands", "Morocco", "World"]
+    feeds:
+      - { name: "NOS", url: "https://feeds.nos.nl/nosnieuwsalgemeen", group: "Netherlands" }
+      - { name: "NL Times", url: "https://nltimes.nl/rss", group: "Netherlands" }
+      - { name: "DutchNews.nl", url: "https://www.dutchnews.nl/feed/", group: "Netherlands" }
+      - { name: "Morocco World News", url: "https://www.moroccoworldnews.com/feed/", group: "Morocco" }
+      - { name: "Hespress English", url: "https://en.hespress.com/feed", group: "Morocco" }
+      - { name: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", group: "World" }
+      - { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", group: "World" }
+      - { name: "Google News - World", url: "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en", group: "World" }
+    google_news:
+      - { q: 'kabinet OR Tweede Kamer OR verkiezingen OR "Den Haag" politiek', lang: nl, group: "Netherlands" }
+      - { q: 'Netherlands government OR Dutch politics OR Utrecht', lang: en, group: "Netherlands" }
+      - { q: 'Morocco OR Moroccan OR Rabat OR Casablanca', lang: en, group: "Morocco" }
+      - { q: 'Maroc OR Rabat OR Casablanca économie OR politique', lang: fr, group: "Morocco" }
+      - { q: 'Marokko OR Marokkaanse Nederland', lang: nl, group: "Morocco" }
+      - { q: 'site:reuters.com world news', lang: en, group: "World" }
 
   - id: ai
     title: "AI - models, tools & techniques"
@@ -202,6 +271,8 @@ rates:
   - { source: ecb,   spread: ["YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"], name: "Euro 10s30s slope", region: "30Y minus 10Y, AAA curve" }
   - { source: ecb,   id: "ICP/M.U2.N.000000.4.ANR",                name: "Euro area inflation", region: "HICP, % y/y" }
   - { source: ecb,   id: "IRS/M.NL.L.L40.CI.0000.EUR.N.Z",         name: "10Y Dutch DSL",    region: "Netherlands · monthly" }
+  - { source: ecb,   spread: ["IRS/M.NL.L.L40.CI.0000.EUR.N.Z", "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"], name: "NL–Bund 10Y spread", region: "Dutch minus German 10Y · monthly" }
+  - { source: ecb,   spread: ["IRS/M.IT.L.L40.CI.0000.EUR.N.Z", "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"], name: "BTP–Bund 10Y spread", region: "Italian minus German 10Y · monthly" }
   - { source: yahoo, id: "^IRX",                                   name: "US 3-month bill",  region: "United States" }
   - { source: yahoo, id: "^TNX",                                   name: "US 10-year",       region: "United States" }
   - { source: yahoo, id: "^TYX",                                   name: "US 30-year",       region: "United States" }
@@ -212,22 +283,22 @@ rates:
 #   news: Google News query for company headlines (optional)
 # ---------------------------------------------------------------------------
 watchlist:
-  - { symbol: "^GSPC",   name: "S&P 500" }
-  - { symbol: "^NDX",    name: "Nasdaq 100" }
-  - { symbol: "^AEX",    name: "AEX (Amsterdam)" }
-  - { symbol: "^STOXX50E", name: "Euro Stoxx 50" }
-  - { symbol: "EXX1.DE", name: "Euro Stoxx Banks ETF" }
-  - { symbol: "^VIX",    name: "VIX" }
-  - { symbol: "BZ=F",    name: "Brent (USD)" }
-  - { symbol: "GC=F",    name: "Gold (USD)" }
-  - { symbol: "EURUSD=X", name: "EUR/USD" }
-  - { symbol: "WKL.AS",  name: "Wolters Kluwer", news: '"Wolters Kluwer"' }
-  - { symbol: "INGA.AS",  name: "ING",            news: 'ING Groep results OR shares' }
-  - { symbol: "ABN.AS",   name: "ABN AMRO",       news: '"ABN AMRO" results OR shares' }
-  - { symbol: "ASML.AS", name: "ASML",           news: 'ASML' }
-  - { symbol: "NVDA",    name: "Nvidia",         news: 'Nvidia stock OR earnings' }
-  - { symbol: "MSFT",    name: "Microsoft",      news: 'Microsoft stock OR earnings OR AI' }
-  - { symbol: "GOOGL",   name: "Alphabet",       news: 'Alphabet stock OR earnings' }
-  - { symbol: "AMZN",    name: "Amazon",         news: 'Amazon stock OR earnings OR AWS' }
-  - { symbol: "META",    name: "Meta",           news: 'Meta Platforms stock OR earnings' }
-  - { symbol: "TSM",     name: "TSMC",           news: 'TSMC earnings OR revenue' }
+  - { symbol: "^GSPC",   name: "S&P 500", group: "Indices" }
+  - { symbol: "^NDX",    name: "Nasdaq 100", group: "Indices" }
+  - { symbol: "^AEX",    name: "AEX (Amsterdam)", group: "Indices" }
+  - { symbol: "^STOXX50E", name: "Euro Stoxx 50", group: "Indices" }
+  - { symbol: "^STOXX",  name: "Stoxx Europe 600", group: "Indices" }
+  - { symbol: "EXX1.DE", name: "Euro Stoxx Banks ETF", group: "Indices" }
+  - { symbol: "^VIX",    name: "VIX", group: "Macro & FX" }
+  - { symbol: "GC=F",    name: "Gold (USD)", group: "Macro & FX" }
+  - { symbol: "EURUSD=X", name: "EUR/USD", group: "Macro & FX" }
+  - { symbol: "WKL.AS",  name: "Wolters Kluwer", news: '"Wolters Kluwer"', group: "Stocks" }
+  - { symbol: "INGA.AS",  name: "ING",            news: 'ING Groep results OR shares', group: "Stocks" }
+  - { symbol: "ABN.AS",   name: "ABN AMRO",       news: '"ABN AMRO" results OR shares', group: "Stocks" }
+  - { symbol: "ASML.AS", name: "ASML",           news: 'ASML', group: "Stocks" }
+  - { symbol: "NVDA",    name: "Nvidia",         news: 'Nvidia stock OR earnings', group: "Stocks" }
+  - { symbol: "MSFT",    name: "Microsoft",      news: 'Microsoft stock OR earnings OR AI', group: "Stocks" }
+  - { symbol: "GOOGL",   name: "Alphabet",       news: 'Alphabet stock OR earnings', group: "Stocks" }
+  - { symbol: "AMZN",    name: "Amazon",         news: 'Amazon stock OR earnings OR AWS', group: "Stocks" }
+  - { symbol: "META",    name: "Meta",           news: 'Meta Platforms stock OR earnings', group: "Stocks" }
+  - { symbol: "TSM",     name: "TSMC",           news: 'TSMC earnings OR revenue', group: "Stocks" }
