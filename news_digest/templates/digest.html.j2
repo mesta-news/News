@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Daily Digest · {{ d.date_label }}</title>
+<style>
+  :root {
+    --bg: #f7f6f3; --card: #ffffff; --text: #1d1d1f; --muted: #6b6b70;
+    --line: #e4e2dd; --accent: #2457c5; --up: #127a3d; --down: #c0362c;
+    --chip: #eef2fb; --warn-bg: #fff6e0; --warn: #8a5a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --card: #1d1d20; --text: #ececee; --muted: #9a9aa2;
+      --line: #2e2e33; --accent: #7aa2ff; --up: #4cc27a; --down: #ff6b5e;
+      --chip: #252a38; --warn-bg: #2d2614; --warn: #f0c060;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { margin: 0; font-size: 1.6rem; }
+  header .sub { color: var(--muted); font-size: .9rem; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
+  nav.toc a { background: var(--chip); color: var(--text); text-decoration: none;
+              padding: 4px 10px; border-radius: 999px; font-size: .85rem; }
+  section, .top { background: var(--card); border: 1px solid var(--line);
+                  border-radius: 12px; padding: 18px 20px; margin-top: 18px; }
+  h2 { margin: 0 0 10px; font-size: 1.2rem; }
+  h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em;
+       color: var(--muted); margin: 18px 0 6px; }
+  a { color: var(--accent); }
+  .brief ul { margin: 0; padding-left: 20px; }
+  .brief li { margin: 4px 0; }
+  .foryou { background: var(--chip); border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
+  .foryou ul { margin: 4px 0 0; padding-left: 20px; }
+  ol.items { list-style: none; margin: 0; padding: 0; }
+  ol.items li { padding: 10px 0; border-top: 1px solid var(--line); }
+  ol.items li:first-child { border-top: 0; }
+  .meta { color: var(--muted); font-size: .8rem; }
+  .note { font-size: .9rem; margin-top: 3px; }
+  .snippet { font-size: .88rem; color: var(--muted); margin-top: 3px; }
+  .badge { font-size: .7rem; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+           background: var(--accent); color: var(--card); margin-right: 4px; vertical-align: 1px; }
+  .alert { background: var(--warn-bg); color: var(--warn); border-radius: 8px;
+           padding: 10px 14px; margin-top: 10px; font-size: .9rem; }
+  .alert pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .78rem; margin: 6px 0 0; color: var(--text); }
+  details summary { cursor: pointer; color: var(--muted); font-size: .9rem; margin-top: 10px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; font-size: .78rem; }
+  .up { color: var(--up); } .down { color: var(--down); }
+  svg.spark { vertical-align: middle; }
+  footer { color: var(--muted); font-size: .8rem; margin-top: 28px; }
+  .errors { font-size: .78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Daily Digest</h1>
+  <div class="sub">{{ d.date_label }} · generated {{ d.generated_label }} ·
+    <a href="archive.html">archive</a></div>
+</header>
+
+<nav class="toc">
+{% for s in d.sections %}<a href="#{{ s.id }}">{{ s.icon }} {{ s.title }}{% if s.new_count %} ({{ s.new_count }}){% endif %}</a>{% endfor %}
+</nav>
+
+{% if d.top %}
+<div class="top">
+  <h2>☕ Today in one minute</h2>
+  <div class="brief"><ul>{% for b in d.top %}<li>{{ b }}</li>{% endfor %}</ul></div>
+</div>
+{% endif %}
+
+{% for s in d.sections %}
+<section id="{{ s.id }}">
+  <h2>{{ s.icon }} {{ s.title }}</h2>
+
+  {% for p in s.pages if p.status in ("changed", "error") %}
+  <div class="alert">
+    {% if p.status == "changed" %}⚠️ Official page changed: <a href="{{ p.url }}">{{ p.name }}</a>
+    {% else %}Could not check <a href="{{ p.url }}">{{ p.name }}</a>{% endif %}
+    {% if p.diff %}<pre>{{ p.diff }}</pre>{% endif %}
+  </div>
+  {% endfor %}
+
+  {% if s.briefing %}
+  <div class="brief">{{ s.briefing.summary | md }}</div>
+  {% if s.briefing.for_you %}
+  <div class="foryou"><strong>For you</strong>
+    <ul>{% for f in s.briefing.for_you %}<li>{{ f }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  {% endif %}
+
+  {% if s.quotes %}
+  <h3>Watchlist</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Name</th><th>Last</th><th>1D</th><th>1W</th><th>1M</th><th>YTD</th><th>3M</th></tr>
+    {% for q in s.quotes %}
+    <tr>
+      <td><a href="https://finance.yahoo.com/quote/{{ q.symbol | urlencode }}">{{ q.name }}</a></td>
+      {% if q.price is not none %}
+      <td>{{ "{:,.2f}".format(q.price) }}</td>
+      {% for k in ("d1", "w1", "m1", "ytd") %}
+      <td>{% if q[k] is not none %}<span class="{{ 'up' if q[k] >= 0 else 'down' }}">{{ "{:+.1f}%".format(q[k]) }}</span>{% else %}–{% endif %}</td>
+      {% endfor %}
+      <td>{{ q.spark | spark }}</td>
+      {% else %}<td colspan="6">no data</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+
+  {% set new_items = s["items"] | selectattr("is_new") | list %}
+  {% set old_items = s["items"] | rejectattr("is_new") | list %}
+  {% if new_items %}
+  <h3>Articles</h3>
+  <ol class="items">
+    {% for i in new_items[:s.max_items] %}
+    <li>
+      <a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
+      <div class="meta">{% if i.sources | length > 1 %}<span class="badge">{{ i.sources | length }} sources</span>{% endif %}{{ i.sources | join(", ") }} · {{ i.published[:10] }}</div>
+      {% if i.note %}<div class="note">💡 {{ i.note }}</div>
+      {% elif i.snippet %}<div class="snippet">{{ i.snippet }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% elif not s.briefing %}
+  <p class="meta">Nothing new since the last digest.</p>
+  {% endif %}
+
+  {% if old_items %}
+  <details><summary>Earlier, already shown ({{ old_items | length }})</summary>
+    <ol class="items">
+      {% for i in old_items[:30] %}
+      <li><a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.title }}</a>
+        <div class="meta">{{ i.sources | join(", ") }} · {{ i.published[:10] }}</div></li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% endif %}
+
+  {% set watched = s.pages | selectattr("status", "in", ["unchanged", "new"]) | list %}
+  {% if watched %}
+  <p class="meta">Watching {{ watched | length }} official page(s) — no changes
+    ({% for p in watched %}<a href="{{ p.url }}">{{ p.name }}</a>, last change {{ p.last_changed }}{{ "; " if not loop.last }}{% endfor %}).</p>
+  {% endif %}
+
+  {% if s.errors %}
+  <details class="errors"><summary>{{ s.errors | length }} source(s) failed</summary>
+    <ul>{% for e in s.errors %}<li>{{ e }}</li>{% endfor %}</ul></details>
+  {% endif %}
+</section>
+{% endfor %}
+
+<footer>
+  {% if d.ai %}Summaries written by Claude from the linked articles — check the source before acting on anything.{% else %}AI summaries are off (no ANTHROPIC_API_KEY).{% endif %}
+  Market data from Yahoo Finance, for information only — not investment advice.
+</footer>
+</div>
+</body>
+</html>
