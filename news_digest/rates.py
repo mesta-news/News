@@ -5,18 +5,40 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
-from .sources import _get
+import requests
+
+from .sources import USER_AGENT, _get
 
 log = logging.getLogger(__name__)
 
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
+# cosd = start date: download ~13 months instead of the full history (FRED is slow on big files).
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}&cosd={start}"
+TIMEOUT = 45
+
+
+def _download(series_id: str) -> bytes:
+    start = (date.today() - timedelta(days=400)).isoformat()
+    url = FRED_CSV.format(id=series_id, start=start)
+    if not url.startswith("http"):
+        return _get(url.split("&", 1)[0])  # local test fixtures
+    for attempt in (1, 2):
+        try:
+            resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
+            resp.raise_for_status()
+            return resp.content
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(3)
+    raise RuntimeError("unreachable")
 
 
 def _series(series_id: str) -> list[tuple[date, float]]:
-    rows = csv.reader(io.StringIO(_get(FRED_CSV.format(id=series_id)).decode()))
+    rows = csv.reader(io.StringIO(_download(series_id).decode()))
     next(rows, None)  # header
     out = []
     for row in rows:
@@ -64,7 +86,7 @@ def fetch(defs: list[dict]) -> tuple[list[dict], str | None]:
 
     if not defs:
         return [], None
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         rows = list(pool.map(one, defs))
     if all(r["value"] is None for r in rows):
         return rows, "Could not load interest rates from FRED."
