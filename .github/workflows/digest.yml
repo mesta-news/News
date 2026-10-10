@@ -21,8 +21,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Personal data (daily editions, state) lives in a private repo when DATA_REPO_TOKEN is set.
+      PRIVATE_DATA: ${{ secrets.DATA_REPO_TOKEN != '' }}
+      DATA_REPO: ${{ vars.DATA_REPO || format('{0}/news-data', github.repository_owner) }}
+      DATA_DIR: data
+      STATE_DIR: state
     steps:
       - uses: actions/checkout@v4
+
+      - name: Get private data
+        if: env.PRIVATE_DATA == 'true'
+        env:
+          TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: |
+          git clone --quiet "https://x-access-token:${TOKEN}@github.com/${DATA_REPO}.git" private
+          git -C private rev-parse HEAD >/dev/null 2>&1 || git -C private checkout -q -b main  # empty repo
+          # First run: copy the editions that are still in this public repo.
+          for d in data state; do
+            if [ ! -d "private/$d" ] && [ -d "$d" ]; then cp -r "$d" "private/$d"; fi
+            mkdir -p "private/$d"
+          done
+          echo "DATA_DIR=private/data" >> "$GITHUB_ENV"
+          echo "STATE_DIR=private/state" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v5
         with:
@@ -46,6 +67,8 @@ jobs:
           DIGEST_EMAIL_TO: ${{ secrets.DIGEST_EMAIL_TO }}
           # App notifications: the signing key (secret) and one code per phone (variable).
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # Optional: publish the site encrypted behind a passphrase (see news_digest/lock.py).
+          SITE_PASSPHRASE: ${{ secrets.SITE_PASSPHRASE }}
           PUSH_SUBSCRIPTIONS: ${{ vars.PUSH_SUBSCRIPTIONS }}
           DIGEST_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
         run: |
@@ -53,9 +76,35 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then FLAGS="--email --push"; fi
           # A manual run ("Run workflow") also notifies, so you can test notifications.
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then FLAGS="--push"; fi
-          python -m news_digest $FLAGS
+          python -m news_digest --data "$DATA_DIR" --state "$STATE_DIR" $FLAGS
+
+      - name: Save history (private repo)
+        if: env.PRIVATE_DATA == 'true'
+        run: |
+          cd private
+          git config user.name "digest-bot"
+          git config user.email "digest-bot@users.noreply.github.com"
+          git add data state
+          git diff --cached --quiet || git commit -q -m "Digest $(date -u +%F)"
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          # Another run may have pushed meanwhile; on a clash keep this run's newer files.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git pull --quiet --rebase -X theirs origin "$branch"
+          fi
+          git push --quiet origin "HEAD:$branch"
+          cd ..
+          # Once the data is safe in the private repo, remove it from this public one.
+          if [ -d data ] || [ -d state ]; then
+            git config user.name "digest-bot"
+            git config user.email "digest-bot@users.noreply.github.com"
+            git rm -r -q --ignore-unmatch data state
+            git commit -q -m "Move personal data to the private data repo"
+            git pull --quiet --rebase origin "$GITHUB_REF_NAME"
+            git push --quiet
+          fi
 
       - name: Save history
+        if: env.PRIVATE_DATA != 'true'
         run: |
           git config user.name "digest-bot"
           git config user.email "digest-bot@users.noreply.github.com"

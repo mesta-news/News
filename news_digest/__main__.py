@@ -25,7 +25,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import alerts, articles, curve, icons, markets, pages, push, rates, sources, summarize, weather
+from . import alerts, articles, curve, icons, lock, markets, pages, push, rates, sources, summarize, weather
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -458,6 +458,9 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
     (out_dir / "badge-72.png").write_bytes(icons.badge_png())
     key = push.private_key()
     env.globals["vapid_public_key"] = push.public_key_b64(key) if key else ""
+    # With SITE_PASSPHRASE set, pages and the search index are published encrypted (see lock.py).
+    secret = lock.passphrase()
+    seal = (lambda html: lock.lock_html(html, secret)) if secret else (lambda html: html)
     files = sorted(data_dir.glob("*.json"), reverse=True)[:SITE_DAYS]
     entries, index_html, digests = [], "", []
     page = env.get_template("digest.html.j2")
@@ -470,19 +473,18 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
                       if s["id"] in style and style[s["id"]].get(k)})
         digests.append(d)
         out = page.render(d=d, charts=_charts(d), articles=_articles(d))
-        (out_dir / f"{d['date']}.html").write_text(out)
+        (out_dir / f"{d['date']}.html").write_text(seal(out))
         if not index_html:
             index_html = out
         entries.append({"date": d["date"], "label": d["date_label"],
                         "new_count": sum(s.get("new_count", 0) for s in d["sections"])})
-    (out_dir / "index.html").write_text(index_html or "<p>No digest yet.</p>")
+    (out_dir / "index.html").write_text(seal(index_html or "<p>No digest yet.</p>"))
     if digests:
         (out_dir / "calendar.ics").write_text(_calendar(digests, digests[0]["date"]))
-    (out_dir / "search.json").write_text(json.dumps(_search_index(digests), ensure_ascii=False,
-                                                    separators=(",", ":")))
-    (out_dir / "archive.html").write_text(
-        env.get_template("archive.html.j2").render(entries=entries))
-    return index_html
+    index = json.dumps(_search_index(digests), ensure_ascii=False, separators=(",", ":"))
+    (out_dir / "search.json").write_text(lock.lock_json(index, secret) if secret else index)
+    (out_dir / "archive.html").write_text(seal(env.get_template("archive.html.j2").render(entries=entries)))
+    return index_html  # unencrypted, for the optional e-mail
 
 
 # --------------------------------------------------------------------------- main
