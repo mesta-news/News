@@ -328,6 +328,45 @@
     } catch (err) {}
   });
 
+  // ------------------------------------------------------------------ listen
+  // Reads the brief aloud with the phone's own voice (no data leaves the phone).
+  let speaking = null;
+  function stopSpeaking() {
+    speechSynthesis.cancel();
+    document.querySelectorAll(".listen.playing").forEach(b => { b.classList.remove("playing"); b.textContent = "▶ Listen"; });
+    document.querySelectorAll(".speaking").forEach(el => el.classList.remove("speaking"));
+    speaking = null;
+  }
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".listen");
+    if (!btn) return;
+    if (!("speechSynthesis" in window)) { btn.textContent = "Not supported"; return; }
+    const same = speaking === btn;
+    stopSpeaking();
+    if (same) return;
+    const box = document.querySelector(btn.dataset.listen);
+    const parts = box ? [...box.querySelectorAll("li, p")].filter(el => el.textContent.trim()) : [];
+    if (!parts.length) return;
+    const voices = speechSynthesis.getVoices();
+    const voice = voices.find(v => /en-GB/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang));
+    speaking = btn;
+    btn.classList.add("playing");
+    btn.textContent = "■ Stop";
+    parts.forEach((el, i) => {
+      const u = new SpeechSynthesisUtterance(el.textContent.replace(/\s+/g, " ").trim());
+      if (voice) u.voice = voice;
+      u.rate = 1.02;
+      u.onstart = () => { document.querySelectorAll(".speaking").forEach(x => x.classList.remove("speaking")); el.classList.add("speaking"); };
+      if (i === parts.length - 1) u.onend = () => { if (speaking === btn) stopSpeaking(); };
+      speechSynthesis.speak(u);
+    });
+  });
+  document.addEventListener("brief:tab", stopSpeaking);
+
+  // Calendar: subscribe (webcal) so new dates arrive by themselves.
+  const cal = $("cal-link");
+  if (cal) cal.href = new URL("calendar.ics", location.href).href.replace(/^https?:/, "webcal:");
+
   // ------------------------------------------------------------------ settings
   // Theme and text size apply at once (and before drawing, see _head.html.j2);
   // tabs, start page, ticker and "For you" apply when Settings closes.
