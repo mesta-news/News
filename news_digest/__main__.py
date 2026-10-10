@@ -12,6 +12,7 @@ import html
 import json
 import logging
 import os
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -22,7 +23,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import markets, pages, sources, summarize
+from . import markets, pages, rates, sources, summarize
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,7 +64,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
             first = seen.setdefault(it.id, today)
             it.is_new = first == today  # re-running on the same day keeps items "new"
         return {
-            "id": sec["id"], "title": sec["title"], "icon": sec.get("icon", ""),
+            "id": sec["id"], "title": sec["title"], "short": sec.get("short", ""),
             "max_items": sec.get("max_items", 15),
             "items": [i.to_dict() for i in items[: sec.get("max_items", 15) + 30]],
             "errors": errors,
@@ -79,6 +80,10 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
         sec["pages"] = pages.check(sec_cfg.get("watch_pages") or [], page_state, today)
         if sec["id"] == "watchlist":
             sec["quotes"], err = markets.quotes(watchlist, now.astimezone(TZ))
+            if err:
+                sec["errors"].append(err)
+        if sec["id"] == "rates":
+            sec["rates"], err = rates.fetch(cfg.get("rates") or [])
             if err:
                 sec["errors"].append(err)
         sec["new_count"] = sum(1 for i in sec["items"] if i["is_new"])
@@ -127,7 +132,8 @@ def _markdown(text: str) -> Markup:
     return Markup(md.markdown(html.escape(text or "", quote=False)))
 
 
-def _sparkline(values: list[float] | None, w: int = 90, h: int = 22) -> Markup:
+def _sparkline(values: list[float] | None, w: int = 120, h: int = 28) -> Markup:
+    """Inline SVG line that stretches to its container's width."""
     if not values or len(values) < 2:
         return Markup("")
     lo, hi = min(values), max(values)
@@ -136,15 +142,49 @@ def _sparkline(values: list[float] | None, w: int = 90, h: int = 22) -> Markup:
     pts = " ".join(f"{i * step:.1f},{h - 2 - (v - lo) / span * (h - 4):.1f}"
                    for i, v in enumerate(values))
     color = "var(--up)" if values[-1] >= values[0] else "var(--down)"
-    return Markup(f'<svg class="spark" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
-                  f'<polyline fill="none" stroke="{color}" stroke-width="1.5" points="{pts}"/></svg>')
+    return Markup(f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" aria-hidden="true">'
+                  f'<polyline fill="none" stroke="{color}" stroke-width="1.6" '
+                  f'vector-effect="non-scaling-stroke" stroke-linejoin="round" points="{pts}"/></svg>')
+
+
+def _price(v: float | None) -> str:
+    if v is None:
+        return "–"
+    return f"{v:,.4f}" if abs(v) < 10 else f"{v:,.2f}"
+
+
+def _pct(v: float | None, decimals: int = 1) -> str:
+    if v is None:
+        return "–"
+    if round(v, decimals) == 0:
+        return f"{0:.{decimals}f}%"
+    return f"{v:+.{decimals}f}%".replace("-", "−")
+
+
+def _updown(v: float | None) -> str:
+    if v is None or abs(v) < 0.05:  # anything that displays as 0.0 is flat
+        return "flat"
+    return "up" if v > 0 else "down"
+
+
+def _bp(v: float | None) -> str:
+    if v is None:
+        return "–"
+    return "0 bp" if v == 0 else f"{v:+.0f} bp".replace("-", "−")
+
+
+def _shortdate(iso: str | None) -> str:
+    try:
+        return datetime.fromisoformat(iso).strftime("%-d %b")
+    except (TypeError, ValueError):
+        return ""
 
 
 def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
-    env.filters["md"] = _markdown
-    env.filters["spark"] = _sparkline
+    env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
+                       bp=_bp, shortdate=_shortdate)
     return env
 
 
@@ -152,6 +192,9 @@ def render_site(data_dir: Path, out_dir: Path) -> str:
     """Render index.html, one page per day and archive.html. Returns index HTML."""
     env = jinja_env()
     out_dir.mkdir(parents=True, exist_ok=True)
+    # App files: manifest, icons and the offline service worker.
+    for f in (Path(__file__).parent / "static").iterdir():
+        shutil.copy(f, out_dir / f.name)
     files = sorted(data_dir.glob("*.json"), reverse=True)[:SITE_DAYS]
     entries, index_html = [], ""
     page = env.get_template("digest.html.j2")

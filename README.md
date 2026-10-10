@@ -8,6 +8,7 @@ A private daily news digest for the two of us. It covers:
 | 🏥 Dutch healthcare job market | Shortages, ANIOS/basisarts hiring, collective agreements (cao), training places |
 | 🤖 AI – models, tools & techniques | Model releases and capabilities, developer tools and practical techniques (OpenAI, Google, Hugging Face, Simon Willison, Latent Space, Hacker News, Google News on Anthropic/Claude) |
 | 📈 Watchlist | Prices (1D/1W/1M/YTD and a 3-month sparkline) and headlines for Wolters Kluwer, ASML, Nvidia, Microsoft, Alphabet, Amazon, Meta, TSMC, the S&P 500, Nasdaq 100, AEX and EUR/USD |
+| 🏦 Interest rates & central banks | ECB, Fed and Bank of England announcements plus news on the BoJ, PBoC and SNB, and Dutch mortgage and savings rates. Tiles show the policy rates and bond yields (US 2y/10y, German Bund, Dutch DSL) with 1-month and 1-year changes, from FRED |
 | 🌍 Business & markets | A Reuters/Bloomberg-style morning picture (Reuters and Bloomberg via Google News, CNBC, BBC, MarketWatch, NOS Economie) |
 
 Every morning a GitHub Action collects the news, asks Claude to write a short
@@ -68,7 +69,10 @@ official pages it watches for changes.
    Without either, the digest still works, with headlines and snippets only.
 4. **Run it:** *Actions → Daily digest → Run workflow*. After 2–3 minutes the
    site is live at `https://<your-username>.github.io/<repo-name>/`.
-   Add it to both phones' home screens (Share → *Add to Home Screen*).
+   **Install it as an app** to get a home-screen icon, a full-screen view and
+   offline reading of the last edition:
+   * **iPhone:** open the link in Safari → Share → *Add to Home Screen*.
+   * **Android:** open it in Chrome → ⋮ menu → *Install app* (or *Add to Home screen*).
 5. **Email (optional):** add these secrets: `SMTP_HOST` (e.g. `smtp.gmail.com`),
    `SMTP_USER` (your Gmail address), `SMTP_PASSWORD` (a Gmail
    [app password](https://myaccount.google.com/apppasswords), not your normal
@@ -86,6 +90,7 @@ Everything is in [`config.yaml`](config.yaml):
   `OR`, `"exact phrase"`, `site:medischcontact.nl` and `-exclude`.
 * **`watch_pages`**: official pages to monitor for changes.
 * **`watchlist`**: Yahoo Finance symbols (Amsterdam stocks end in `.AS`).
+* **`rates`**: interest-rate series from [FRED](https://fred.stlouisfed.org); the ID is in the series page URL.
 * **`model` / `effort`**: the Claude model and how hard it thinks.
 
 Changes to `config.yaml` on `main` trigger a fresh digest automatically.
