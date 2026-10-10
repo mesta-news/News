@@ -17,6 +17,7 @@ import logging
 import os
 import struct
 import time
+from datetime import datetime
 from urllib.parse import urlsplit
 
 import requests
@@ -128,8 +129,34 @@ def _clip(text: str, limit: int = 200) -> str:
     return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
-def messages(digest: dict, tabs: list[str]) -> list[dict]:
-    """One notification per chosen tab with something new, in tab order."""
+def _label(s: dict) -> str:
+    return f"{s.get('emoji', '')} {s.get('short') or s['title']}".strip()
+
+
+def _weekly(digest: dict) -> list[dict]:
+    """The week in review, announced once, on Saturday."""
+    week = digest.get("weekly")
+    if not week or datetime.fromisoformat(digest["date"]).weekday() != 5:
+        return []
+    body = (week.get("overview") or ["Your week in review is ready."])[0]
+    return [{"title": "🗓️ The week in review", "body": _clip(body.replace("**", "")), "tag": "week",
+             "url": "./#week", "icon": "icon-192.png"}]
+
+
+def important_messages(digest: dict, tabs: list[str]) -> list[dict]:
+    """Default mode: only tabs where something big happened (see alerts.py)."""
+    out = []
+    for s in digest["sections"]:
+        if s["id"] in tabs and s.get("alerts"):
+            out.append({"title": f"{_label(s)} · Important", "body": _clip(" · ".join(s["alerts"][:3])),
+                        "tag": s["id"], "url": f"./#{s['id']}", "icon": f"icon-cat-{s['id']}.png"})
+    return out + _weekly(digest)
+
+
+def messages(digest: dict, tabs: list[str], mode: str = "important") -> list[dict]:
+    """Notifications for one phone: important news only, or (mode "daily") every tab with news."""
+    if mode != "daily":
+        return important_messages(digest, tabs)
     from .__main__ import _lead  # the same headline the front page shows
 
     out = []
@@ -148,11 +175,12 @@ def messages(digest: dict, tabs: list[str]) -> list[dict]:
             head = fresh[0]["title"] if fresh else ""
         if not head:
             continue
-        label = f"{s.get('emoji', '')} {s.get('short') or s['title']}".strip()
+        if s.get("alerts"):
+            head = s["alerts"][0]
         body = head + (f". {lead['body']}" if lead["body"] and head == lead["head"] else "")
-        out.append({"title": f"{label} · {s['new_count']} new", "body": _clip(body), "tag": s["id"],
+        out.append({"title": f"{_label(s)} · {s['new_count']} new", "body": _clip(body), "tag": s["id"],
                     "url": f"./#{s['id']}", "icon": f"icon-cat-{s['id']}.png"})
-    return out
+    return out + _weekly(digest)
 
 
 def notify_all(digest: dict, site_url: str) -> None:
@@ -165,7 +193,7 @@ def notify_all(digest: dict, site_url: str) -> None:
     for n, sub in enumerate(subs, 1):
         who = sub.get("name") or f"subscriber {n}"
         sent = 0
-        for msg in messages(digest, sub.get("tabs") or ["today"]):
+        for msg in messages(digest, sub.get("tabs") or ["today"], sub.get("mode", "important")):
             if site_url:
                 msg = {**msg, "url": site_url + msg["url"][2:], "icon": site_url + msg["icon"]}
             try:

@@ -29,6 +29,11 @@ also have it emailed to you.
 * **Coming up** on the Today page collects every tab's dated events (central bank meetings, data releases, launches, game releases) in date order.
 * Some briefings end with an **Explainer**, a short background note on the one development that needs context.
 * Claude sees each tab's previous briefing, so it flags follow-ups and reversals instead of repeating yesterday.
+* **This week** (Saturday and Sunday editions): a week in review per tab, written from the week's saved briefings.
+* **Search** (magnifier): stories and briefings from the last 90 days (`search.json`, built with the site).
+* **Saved** (bookmark): tap ☆ on any story to keep it; saved stories stay on that phone.
+* **For you**: the stories you open teach the app which topics and sources you like; up to two matching stories per tab move to the top. Stored on each phone only; reset in the footer.
+* **Charts**: tap a price or rate tile for a 1-year chart; drag across it to read values.
 
 ## Notifications
 
@@ -44,8 +49,13 @@ takes a one-time setup:
 3. Add the code as a new line to the repository **variable** `PUSH_SUBSCRIPTIONS`
    (Settings → Secrets and variables → Actions → Variables). One line per phone.
 
-Notifications go out after the scheduled morning run, and after a manual
-"Run workflow" so you can test them. If a phone's subscription expires, the
+By default a phone only hears about **important** news in its tabs: a big
+one-day price move, a rate decision or large yield move (`alert_bp:` in
+`config.yaml`), or news Claude marks as important (for example a GTA 6 date or
+an ECB decision), plus "The week in review" on Saturday. In the bell menu you
+can pick "Every morning" instead. Notifications go out after the scheduled
+morning run, and after a manual "Run workflow" so you can test them. Codes
+made before this option existed use "important". If a phone's subscription expires, the
 workflow log says so; turn notifications on again and replace that line.
 
 ## How it works (and why not a JavaScript-only web app)
