@@ -6,7 +6,11 @@
 <style>
   /* Section tabs */
   .tabs { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px;
-          padding: 0 16px; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--rule); }
+          padding: 0 16px; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--rule);
+          overscroll-behavior-x: contain; scroll-padding: 0 32px; }
+  /* Fade the edges of horizontal strips so it's clear there is more to scroll. */
+  .tabs, .ticker-row { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent);
+                       mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent); }
   .tabs::-webkit-scrollbar { display: none; }
   .tabs a { flex: none; padding: 10px 0 9px; font: 700 .72rem/1 var(--sans); letter-spacing: .08em;
             text-transform: uppercase; color: var(--muted); text-decoration: none;
@@ -21,10 +25,13 @@
 
   /* Black market ticker */
   .ticker { background: var(--tick-bg); color: var(--tick-ink); }
-  .ticker-row { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .ticker-row { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px;
+                -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .ticker-row::-webkit-scrollbar { display: none; }
-  .tick { flex: none; display: flex; align-items: baseline; gap: 7px; padding: 9px 16px 9px 0; margin-right: 16px;
-          border-right: 1px solid #262626; font-size: .76rem; white-space: nowrap; }
+  .tick { flex: none; display: flex; align-items: baseline; gap: 7px; padding: 10px 16px 10px 0; margin-right: 16px;
+          border-right: 1px solid #262626; font-size: .76rem; white-space: nowrap;
+          color: inherit; text-decoration: none; }
+  .tick:hover .tick-name, .tick:focus-visible .tick-name { color: var(--tick-ink); }
   .tick:last-child { border-right: 0; }
   .tick-name { color: var(--tick-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .68rem; }
   .tick-val { font-weight: 700; }
@@ -32,8 +39,9 @@
 
   /* Panels */
   .js .panel { display: none; }
-  .js .panel.active { display: block; animation: fade .18s ease-out; }
-  @keyframes fade { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .js .panel.active { display: block; animation: fade .15s ease-out; }
+  @keyframes fade { from { opacity: .5; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .js .panel.active { animation: none; } }
   .panel { padding-top: 22px; }
   .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--rule-strong); }
   .panel-head h2 { margin: 6px 0 0; font: 600 clamp(1.7rem, 6.5vw, 2.3rem)/1.1 var(--serif); letter-spacing: -.015em; }
@@ -91,9 +99,15 @@
   /* Data tiles */
   .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px;
            margin: 0 0 22px; padding: 1px; }
-  .tile { display: block; padding: 11px 12px 10px; background: var(--card); text-decoration: none;
-          box-shadow: 0 0 0 1px var(--rule); }
-  .tile-name { font-size: .78rem; font-weight: 700; line-height: 1.3; }
+  @media (max-width: 360px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  .tile { display: block; min-width: 0; padding: 11px 12px 10px; background: var(--card); text-decoration: none;
+          box-shadow: 0 0 0 1px var(--rule); scroll-margin-top: 120px; }
+  .tile:hover { background: var(--paper); }
+  .tile.flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { 0%, 40% { box-shadow: 0 0 0 2px var(--claret); } 100% { box-shadow: 0 0 0 1px var(--rule); } }
+  .tile-group { margin: 0 0 6px; }
+  .tile-group + .tiles { margin-bottom: 18px; }
+  .tile-name { font-size: .78rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
   .tile-sub { font-size: .68rem; color: var(--faint); }
   .tile-val { margin-top: 5px; font-size: 1.22rem; font-weight: 700; letter-spacing: -.01em; }
   .tile-chg { display: flex; flex-wrap: wrap; gap: 3px 8px; margin-top: 2px; font-size: .72rem; font-weight: 600; }
@@ -104,6 +118,7 @@
 
   /* Stories */
   .label { margin: 26px 0 0; padding-top: 8px; border-top: 1px solid var(--rule-strong); }
+  .group-label { margin: 18px 0 0; color: var(--claret); }
   .stories { list-style: none; margin: 0; padding: 0; }
   .stories li { padding: 13px 0; border-bottom: 1px solid var(--rule); }
   .stories li:last-child { border-bottom: 0; }
@@ -117,6 +132,7 @@
   .empty { margin: 4px 0; color: var(--muted); font: italic 1rem var(--serif); }
 
   details { margin-top: 6px; }
+  a, button, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   details summary { cursor: pointer; list-style: none; padding: 10px 0; font: 700 .7rem/1 var(--sans);
                     letter-spacing: .08em; text-transform: uppercase; color: var(--claret); }
   details summary::-webkit-details-marker { display: none; }
@@ -139,10 +155,11 @@
         <div class="meta">{{ i.published | shortdate }}</div>
       </li>
 {%- endmacro %}
+{%- macro tile_id(sec, x) %}t-{{ sec }}-{{ (x.symbol or x.id or x.name) | lower | replace("^", "") | replace("=", "") | replace(".", "") | replace("/", "") | replace(" ", "") | truncate(40, true, "") }}{% endmacro -%}
 {%- set ticks = [] -%}
-{%- for s in d.sections %}{% for q in s.quotes or [] if q.price is not none %}{% set _ = ticks.append(q) %}{% endfor %}{% endfor -%}
+{%- for s in d.sections %}{% for q in s.quotes or [] if q.price is not none %}{% set _ = ticks.append((s.id, q)) %}{% endfor %}{% endfor -%}
 {%- set rate_ticks = [] -%}
-{%- for s in d.sections %}{% for r in (s.rates or [])[:4] if r.value is not none %}{% set _ = rate_ticks.append(r) %}{% endfor %}{% endfor -%}
+{%- for s in d.sections %}{% for r in (s.rates or [])[:4] if r.value is not none %}{% set _ = rate_ticks.append((s.id, r)) %}{% endfor %}{% endfor -%}
 
 <header class="appbar">
   <div class="wrap">
@@ -165,11 +182,11 @@
 {% if ticks or rate_ticks %}
 <div class="ticker" aria-label="Markets">
   <div class="wrap"><div class="ticker-row">
-    {% for q in ticks %}
-    <div class="tick num"><span class="tick-name">{{ q.name }}</span><span class="tick-val">{{ q.price | price }}</span>{% if q.d1 is not none %}<span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span>{% endif %}</div>
+    {% for sid, q in ticks %}
+    <a class="tick num" href="#{{ sid }}" data-tab="{{ sid }}" data-focus="{{ tile_id(sid, q) }}"><span class="tick-name">{{ q.name }}</span><span class="tick-val">{{ q.price | price }}</span>{% if q.d1 is not none %}<span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span>{% endif %}</a>
     {% endfor %}
-    {% for r in rate_ticks %}
-    <div class="tick num"><span class="tick-name">{{ r.name }}</span><span class="tick-val">{{ r | rateval }}</span>{% if r.m1 is not none %}<span class="{{ r.m1 | updown }}">{{ r.m1 | bp }}</span>{% endif %}</div>
+    {% for sid, r in rate_ticks %}
+    <a class="tick num" href="#{{ sid }}" data-tab="{{ sid }}" data-focus="{{ tile_id(sid, r) }}"><span class="tick-name">{{ r.name }}</span><span class="tick-val">{{ r | rateval }}</span>{% if r.m1 is not none %}<span class="{{ r.m1 | updown }}">{{ r.m1 | bp }}</span>{% endif %}</a>
     {% endfor %}
   </div></div>
 </div>
@@ -238,10 +255,36 @@
     </div>
     {% endfor %}
 
+    {% if s.quotes %}
+    {% set qgroups = s.quotes | map(attribute="group") | map("default", "", true) | unique | list %}
+    {% for g in qgroups %}
+    {% if g and qgroups | length > 1 %}<div class="kicker tile-group">{{ g }}</div>{% endif %}
+    <div class="tiles">
+      {% for q in s.quotes if (q.group or "") == g %}
+      <a class="tile" id="{{ tile_id(s.id, q) }}" href="https://finance.yahoo.com/quote/{{ q.symbol | urlencode }}" target="_blank" rel="noopener">
+        <div class="tile-name">{{ q.name }}</div>
+        <div class="tile-sub">{{ q.symbol }}{% if q.unit %} · {{ q.unit }}{% endif %}</div>
+        {% if q.price is not none %}
+        <div class="tile-val num">{{ q.price | price }}</div>
+        <div class="tile-chg num">
+          {% if q.d1 is not none %}<span class="pill {{ q.d1 | updown }}">{{ q.d1 | pct(1) }}</span>{% endif %}
+          {% if q.w1 is not none %}<span class="{{ q.w1 | updown }}">{{ q.w1 | pct(1) }} 1W</span>{% endif %}
+          {% if q.m1 is not none %}<span class="{{ q.m1 | updown }}">{{ q.m1 | pct(1) }} 1M</span>{% endif %}
+          {% if q.ytd is not none %}<span class="{{ q.ytd | updown }}">{{ q.ytd | pct(1) }} YTD</span>{% endif %}
+        </div>
+        {{ q.spark | spark }}
+        {% if q.as_of %}<div class="tile-sub">as of {{ q.as_of | shortdate }}</div>{% endif %}
+        {% else %}<div class="tile-empty">No data</div>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    {% endif %}
     {% if s.rates %}
+    {% if s.rates_label %}<div class="kicker tile-group">{{ s.rates_label }}</div>{% endif %}
     <div class="tiles">
       {% for r in s.rates %}
-      <a class="tile" href="{{ r.url or ('https://fred.stlouisfed.org/series/' ~ (r.id | urlencode)) }}" target="_blank" rel="noopener">
+      <a class="tile" id="{{ tile_id(s.id, r) }}" href="{{ r.url or ('https://fred.stlouisfed.org/series/' ~ (r.id | urlencode)) }}" target="_blank" rel="noopener">
         <div class="tile-name">{{ r.name }}</div>
         <div class="tile-sub">{{ r.region }}</div>
         {% if r.value is not none %}
@@ -258,25 +301,6 @@
     </div>
     {% endif %}
 
-    {% if s.quotes %}
-    <div class="tiles">
-      {% for q in s.quotes %}
-      <a class="tile" href="https://finance.yahoo.com/quote/{{ q.symbol | urlencode }}" target="_blank" rel="noopener">
-        <div class="tile-name">{{ q.name }}</div>
-        <div class="tile-sub">{{ q.symbol }}</div>
-        {% if q.price is not none %}
-        <div class="tile-val num">{{ q.price | price }}</div>
-        <div class="tile-chg num">
-          {% if q.d1 is not none %}<span class="pill {{ q.d1 | updown }}">{{ q.d1 | pct(1) }}</span>{% endif %}
-          {% if q.w1 is not none %}<span class="{{ q.w1 | updown }}">{{ q.w1 | pct(1) }} 1W</span>{% endif %}
-          {% if q.ytd is not none %}<span class="{{ q.ytd | updown }}">{{ q.ytd | pct(1) }} YTD</span>{% endif %}
-        </div>
-        {{ q.spark | spark }}
-        {% else %}<div class="tile-empty">No data</div>{% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
 
     {% if s.briefing %}
     <div class="brief">{{ s.briefing.summary | md }}</div>
@@ -296,7 +320,26 @@
 
     {% set new_items = s["items"] | selectattr("is_new") | list %}
     {% set old_items = s["items"] | rejectattr("is_new") | list %}
-    {% if new_items %}
+    {% if new_items and s.groups %}
+    <div class="kicker label">Stories</div>
+    {% for g in s.groups %}
+    {% set gi = new_items | selectattr("group", "equalto", g) | list %}
+    {% if gi %}
+    <div class="kicker group-label">{{ g }}</div>
+    <ul class="stories">{% for i in gi[:5] %}{{ story(i) }}{% endfor %}</ul>
+    {% if gi | length > 5 %}
+    <details><summary>More from {{ g }} ({{ gi[5:] | length }})</summary>
+      <ul class="stories">{% for i in gi[5:] %}{{ story(i) }}{% endfor %}</ul>
+    </details>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% set other = new_items | rejectattr("group", "in", s.groups) | list %}
+    {% if other %}
+    <div class="kicker group-label">Other</div>
+    <ul class="stories">{% for i in other[:5] %}{{ story(i) }}{% endfor %}</ul>
+    {% endif %}
+    {% elif new_items %}
     <div class="kicker label">Stories</div>
     <ul class="stories">{% for i in new_items[:6] %}{{ story(i) }}{% endfor %}</ul>
     {% if new_items | length > 6 %}
@@ -361,7 +404,7 @@
       document.querySelector(".stale").hidden = false;
     }
 
-    function show(id, { save = true } = {}) {
+    function show(id, { save = true, focus = null } = {}) {
       if (!ids.includes(id)) id = "today";
       seen[id] = edition;
       tabs.find(a => a.dataset.tab === id)?.classList.remove("unread");
@@ -372,7 +415,11 @@
       if (tab) nav.scrollTo({ left: tab.offsetLeft - (nav.clientWidth - tab.clientWidth) / 2, behavior: current ? "smooth" : "auto" });
       if (save) { try { localStorage.setItem(KEY, id); } catch (e) {} }
       if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
-      if (current && current !== id) window.scrollTo({ top: 0 });
+      const target = focus && document.getElementById(focus);
+      if (target) {
+        target.scrollIntoView({ block: "center", behavior: current === id ? "smooth" : "auto" });
+        target.classList.remove("flash"); void target.offsetWidth; target.classList.add("flash");
+      } else if (current && current !== id) window.scrollTo({ top: 0 });
       current = id;
     }
 
@@ -380,8 +427,21 @@
       const a = e.target.closest("a[data-tab]");
       if (!a) return;
       e.preventDefault();
-      show(a.dataset.tab);
+      show(a.dataset.tab, { focus: a.dataset.focus });
     });
+
+    // Desktop: arrow keys switch tabs; a vertical mouse wheel scrolls the tab and ticker strips sideways.
+    addEventListener("keydown", e => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.target.closest("input, textarea, select")) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const i = ids.indexOf(current) + (e.key === "ArrowRight" ? 1 : -1);
+      if (i >= 0 && i < ids.length) show(ids[i]);
+    });
+    document.querySelectorAll(".tabs, .ticker-row").forEach(strip => strip.addEventListener("wheel", e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || strip.scrollWidth <= strip.clientWidth) return;
+      e.preventDefault();
+      strip.scrollLeft += e.deltaY;
+    }, { passive: false }));
     addEventListener("hashchange", () => show(location.hash.slice(1)));
 
     let saved = null;
@@ -389,18 +449,60 @@
     show(location.hash.slice(1) || saved || "today", { save: false });
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-    // Swipe left/right on the content to move between tabs.
+    // Ticker: scroll slowly from right to left in a loop. It pauses while touched,
+    // hovered or focused, so prices stay easy to tap and can still be swiped by hand.
+    const row = document.querySelector(".ticker-row");
+    if (row && row.children.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const originals = [...row.children];
+      originals.forEach(n => {
+        const copy = n.cloneNode(true);
+        copy.setAttribute("aria-hidden", "true");
+        copy.tabIndex = -1;
+        row.appendChild(copy);
+      });
+      const SPEED = 35;  // pixels per second
+      const loopWidth = () => row.children[originals.length].offsetLeft - row.children[0].offsetLeft;
+      let pos = 0, last = null, paused = false, resume = null;
+      const pause = () => { paused = true; clearTimeout(resume); };
+      const unpause = (delay) => { clearTimeout(resume); resume = setTimeout(() => { pos = row.scrollLeft; paused = false; }, delay); };
+      row.addEventListener("pointerenter", e => e.pointerType === "mouse" && pause());
+      row.addEventListener("pointerleave", e => e.pointerType === "mouse" && unpause(600));
+      row.addEventListener("touchstart", pause, { passive: true });
+      row.addEventListener("touchend", () => unpause(2500), { passive: true });
+      row.addEventListener("focusin", pause);
+      row.addEventListener("focusout", () => unpause(600));
+      row.addEventListener("wheel", () => { pause(); unpause(2500); }, { passive: true });
+      const step = t => {
+        if (last !== null && !paused && !document.hidden) {
+          const w = loopWidth();
+          pos += SPEED * Math.min(t - last, 100) / 1000;
+          if (w > 0) pos = ((pos % w) + w) % w;
+          row.scrollLeft = pos;
+        }
+        last = t;
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // Swipe left/right on the content to move between tabs (also over the price tiles).
+    // Elements that scroll sideways themselves (wide <pre> blocks) keep their own swipe.
     let x0 = null, y0 = null;
     const main = document.querySelector("main");
+    const scrollsSideways = el => {
+      for (; el && el !== main; el = el.parentElement) if (el.scrollWidth > el.clientWidth + 2 &&
+          /auto|scroll/.test(getComputedStyle(el).overflowX)) return true;
+      return false;
+    };
     main.addEventListener("touchstart", e => {
-      if (e.target.closest(".tiles, pre")) { x0 = null; return; }
+      if (e.touches.length > 1 || scrollsSideways(e.target)) { x0 = null; return; }
       x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
     }, { passive: true });
     main.addEventListener("touchend", e => {
       if (x0 === null) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
       x0 = null;
-      if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
       const i = ids.indexOf(current) + (dx < 0 ? 1 : -1);
       if (i >= 0 && i < ids.length) show(ids[i]);
     }, { passive: true });
