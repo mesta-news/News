@@ -216,7 +216,7 @@ watchlist:
   - { symbol: "^NDX",    name: "Nasdaq 100" }
   - { symbol: "^AEX",    name: "AEX (Amsterdam)" }
   - { symbol: "^STOXX50E", name: "Euro Stoxx 50" }
-  - { symbol: "^SX7E",   name: "Euro Stoxx Banks" }
+  - { symbol: "EXX1.DE", name: "Euro Stoxx Banks ETF" }
   - { symbol: "^VIX",    name: "VIX" }
   - { symbol: "BZ=F",    name: "Brent (USD)" }
   - { symbol: "GC=F",    name: "Gold (USD)" }
