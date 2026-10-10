@@ -24,7 +24,7 @@ from .sources import USER_AGENT, _get
 log = logging.getLogger(__name__)
 
 TIMEOUT = 45
-HISTORY_DAYS = 400
+HISTORY_DAYS = 450  # > 1 year, so monthly series still have a year-ago point
 ECB_CSV = "https://data-api.ecb.europa.eu/service/data/{flow}/{key}?format=csvdata&startPeriod={start}"
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}&cosd={start}"
 
