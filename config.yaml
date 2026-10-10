@@ -38,11 +38,14 @@ seen_retention_days: 60
 #                 text of the page changes, the digest shows what changed.
 #   max_age_days: ignore items older than this
 #   max_items:    max articles listed in the section
+#   emoji, color: label and [light, dark] colour of the tab and its notifications
 # ---------------------------------------------------------------------------
 sections:
   - id: careers
     title: "Careers, jobs & registration"
     short: "Careers"
+    emoji: "💼"
+    color: ["#c2410c", "#fb923c"]   # light, dark: tab colour and notification icon
     max_age_days: 7
     max_items: 15
     google_news:
@@ -71,6 +74,8 @@ sections:
   - id: research
     title: "Clinical trials, regulation & medical affairs"
     short: "Clinical research"
+    emoji: "🔬"
+    color: ["#0f766e", "#2dd4bf"]   # light, dark: tab colour and notification icon
     max_age_days: 7
     max_items: 15
     google_news:
@@ -87,6 +92,8 @@ sections:
   - id: medicine
     title: "Medical science & research"
     short: "Medicine"
+    emoji: "🧬"
+    color: ["#be185d", "#f472b6"]   # light, dark: tab colour and notification icon
     max_age_days: 7
     max_items: 15
     feeds:
@@ -96,12 +103,12 @@ sections:
       - { name: "Nature Medicine", url: "https://www.nature.com/nm.rss" }
       - { name: "STAT", url: "https://www.statnews.com/feed/" }
       - { name: "JAMA", url: "https://jamanetwork.com/rss/site_3/67.xml" }
-      - { name: "FDA press releases", url: "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml" }
       - { name: "Endpoints News", url: "https://endpts.com/feed/" }
       - { name: "Fierce Biotech", url: "https://www.fiercebiotech.com/rss/xml" }
     google_news:
       - { q: '"phase 3" trial results OR "topline results" OR "met its primary endpoint"', lang: en }
       - { q: 'FDA approves OR "EMA recommends" OR "CHMP positive opinion" new drug', lang: en }
+      - { q: 'site:fda.gov news release OR approves OR safety', lang: en }
       - { q: 'NEJM OR Lancet OR JAMA OR BMJ study finds', lang: en }
       - { q: 'medisch onderzoek UMC Utrecht OR Amsterdam UMC OR LUMC OR Erasmus MC studie', lang: nl }
       - { q: 'ESMO OR ASCO OR ESC OR EASD OR ASH congress late-breaking OR "presented at"', lang: en }
@@ -111,6 +118,8 @@ sections:
   - id: banking
     title: "Dutch banking & ALM"
     short: "Banking"
+    emoji: "🏦"
+    color: ["#1d4ed8", "#60a5fa"]   # light, dark: tab colour and notification icon
     max_age_days: 5
     max_items: 15
     feeds:
@@ -142,6 +151,8 @@ sections:
   - id: rates
     title: "Interest rates & central banks"
     short: "Rates"
+    emoji: "📉"
+    color: ["#6d28d9", "#a78bfa"]   # light, dark: tab colour and notification icon
     max_age_days: 4
     max_items: 15
     feeds:
@@ -159,6 +170,8 @@ sections:
   - id: watchlist
     title: "Markets & watchlist"
     short: "Markets"
+    emoji: "📈"
+    color: ["#15803d", "#4ade80"]   # light, dark: tab colour and notification icon
     max_age_days: 4
     max_items: 20
     # Feeds for this section are generated from the watchlist below
@@ -167,6 +180,8 @@ sections:
   - id: energy
     title: "Energy & commodities"
     short: "Energy"
+    emoji: "⚡"
+    color: ["#a16207", "#facc15"]   # light, dark: tab colour and notification icon
     max_age_days: 3
     max_items: 15
     feeds:
@@ -198,6 +213,8 @@ sections:
   - id: business
     title: "Business & markets"
     short: "Business"
+    emoji: "🌍"
+    color: ["#475569", "#94a3b8"]   # light, dark: tab colour and notification icon
     max_age_days: 2
     max_items: 20
     feeds:
@@ -214,6 +231,8 @@ sections:
   - id: world
     title: "Netherlands, Morocco & the world"
     short: "World"
+    emoji: "🗞️"
+    color: ["#0369a1", "#38bdf8"]   # light, dark: tab colour and notification icon
     max_age_days: 2
     max_items: 24
     # Stories are shown under these headings, taking turns so each region gets space.
@@ -222,7 +241,6 @@ sections:
       - { name: "NOS", url: "https://feeds.nos.nl/nosnieuwsalgemeen", group: "Netherlands" }
       - { name: "NL Times", url: "https://nltimes.nl/rss", group: "Netherlands" }
       - { name: "DutchNews.nl", url: "https://www.dutchnews.nl/feed/", group: "Netherlands" }
-      - { name: "Morocco World News", url: "https://www.moroccoworldnews.com/feed/", group: "Morocco" }
       - { name: "Hespress English", url: "https://en.hespress.com/feed", group: "Morocco" }
       - { name: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", group: "World" }
       - { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml", group: "World" }
@@ -231,6 +249,7 @@ sections:
       - { q: 'kabinet OR Tweede Kamer OR verkiezingen OR "Den Haag" politiek', lang: nl, group: "Netherlands" }
       - { q: 'Netherlands government OR Dutch politics OR Utrecht', lang: en, group: "Netherlands" }
       - { q: 'Morocco OR Moroccan OR Rabat OR Casablanca', lang: en, group: "Morocco" }
+      - { q: 'site:moroccoworldnews.com', lang: en, group: "Morocco" }
       - { q: 'Maroc OR Rabat OR Casablanca économie OR politique', lang: fr, group: "Morocco" }
       - { q: 'Marokko OR Marokkaanse Nederland', lang: nl, group: "Morocco" }
       - { q: 'site:reuters.com world news', lang: en, group: "World" }
@@ -238,6 +257,8 @@ sections:
   - id: ai
     title: "AI - models, tools & techniques"
     short: "AI"
+    emoji: "🤖"
+    color: ["#a21caf", "#e879f9"]   # light, dark: tab colour and notification icon
     max_age_days: 3
     max_items: 20
     feeds:
