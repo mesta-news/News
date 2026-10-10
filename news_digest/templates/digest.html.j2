@@ -236,6 +236,26 @@
               background: var(--card); color: var(--ink); font: 600 .9rem/1.35 var(--sans); text-align: left; cursor: pointer; }
   .next-btn span { display: block; font: 600 1rem/1.3 var(--serif); margin-top: 2px; }
 
+  /* Morning essentials, listen, calendar, yield curve */
+  .essentials { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 0; }
+  .ess { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--rule); background: var(--card);
+         font-size: .78rem; color: var(--ink-2); text-decoration: none; }
+  .ess-big { font: 700 1.25rem/1.2 var(--sans); color: var(--ink); }
+  .kicker-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .listen { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card); color: var(--ink);
+            font: 700 .72rem/1 var(--sans); letter-spacing: .04em; cursor: pointer; }
+  .listen.playing { background: var(--claret); border-color: var(--claret); color: var(--paper); }
+  .panel > .listen { display: block; margin: -6px 0 12px auto; }
+  .speaking { background: var(--alert-soft); }
+  .cal-link { font: 700 .72rem/1 var(--sans); color: var(--claret); text-decoration: none; }
+  .curve-box { margin: 0 0 22px; padding: 12px 12px 8px; border: 1px solid var(--rule); background: var(--card); }
+  .curve-box figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+  .curve-box .legend { font-size: .72rem; color: var(--muted); }
+  .curve-box .legend i { display: inline-block; width: 16px; height: 0; margin: 0 4px 3px 8px; border-top: 2px solid var(--claret); }
+  .curve-box .legend .l-m1 { border-top: 2px dotted var(--muted); }
+  .curve-box .legend .l-y1 { border-top: 2px dashed var(--faint); }
+  svg.curve { display: block; width: 100%; height: auto; margin-top: 6px; }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
              padding: 10px 0; border-bottom: 1px solid var(--rule); }
@@ -346,12 +366,22 @@
     <div class="dateline"><span>{{ d.date_label }}</span><span>Edition {{ d.generated_label }}</span></div>
     <h1 class="front-title">Today's brief</h1>
     <div class="meta">{{ d.sections | sum(attribute="new_count") }} new stories across {{ d.sections | length }} sections</div>
+    {% set mad = [] %}{% for s in d.sections %}{% for q in s.quotes or [] if q.symbol == "EURMAD=X" and q.price %}{% set _ = mad.append(q) %}{% endfor %}{% endfor %}
+    {% if d.weather or mad %}
+    <div class="essentials">
+      {% if d.weather %}{% set w = d.weather %}<div class="ess"><span class="ess-big">{{ w.emoji }} {{ w.max }}°</span>
+        <span>{{ w.place }} · {{ w.text }} · low {{ w.min }}°{% if w.rain is not none %} · rain {{ w.rain }}%{% endif %} · wind {{ w.wind }} km/h</span></div>{% endif %}
+      {% if mad %}{% set q = mad[0] %}<a class="ess" href="#world" data-tab="world" data-focus="{{ tile_slug('world', q) }}"><span class="ess-big num">{{ "%.2f" | format(q.price) }}</span>
+        <span>dirham per euro{% if q.d1 is not none %} · <span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span> today{% endif %}</span></a>{% endif %}
+    </div>
+    {% endif %}
     <div class="offline">You're offline. Showing the last saved edition.</div>
     <div class="stale" hidden>This edition is from {{ d.date_label }}. Today's run may have failed; check the Actions tab on GitHub.</div>
 
     {% if d.top %}
     <div class="minute">
-      <div class="kicker" style="color:var(--claret)">In one minute</div>
+      <div class="kicker-row"><div class="kicker" style="color:var(--claret)">In one minute</div>
+        <button class="listen" type="button" data-listen=".minute" aria-label="Listen to the brief">▶ Listen</button></div>
       <ol>
         {% for b in d.top %}
         {% if b is mapping %}
@@ -366,7 +396,8 @@
     {% set coming = d | agenda %}
     {% if coming %}
     <div class="agenda">
-      <div class="kicker" style="color:var(--claret)">Coming up</div>
+      <div class="kicker-row"><div class="kicker" style="color:var(--claret)">Coming up</div>
+        <a class="cal-link" id="cal-link" href="calendar.ics">＋ Add to my calendar</a></div>
       <ul>{% for e in coming %}
         <li><span class="when num">{{ e.date.strftime("%a %-d %b") }}{% if e.time %}<br><small>{{ e.time }}</small>{% endif %}</span>
           <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span></li>
@@ -496,7 +527,17 @@
     {% endif %}
 
 
+    {% if s.curve %}
+    <figure class="curve-box">
+      <figcaption><span class="kicker">Euro AAA yield curve</span>
+        <span class="legend"><i class="l-now"></i>Today <i class="l-m1"></i>1 month ago <i class="l-y1"></i>1 year ago</span></figcaption>
+      {{ s.curve | curve }}
+      <div class="meta">Government spot rates, ECB · as of {{ s.curve.as_of | shortdate }} · 2s10s {{ ((s.curve.now[5] - s.curve.now[1]) * 100) | round | int }} bp, 10s30s {{ ((s.curve.now[8] - s.curve.now[5]) * 100) | round | int }} bp</div>
+    </figure>
+    {% endif %}
+
     {% if s.briefing %}
+    {% if s.briefing.summary %}<button class="listen" type="button" data-listen="#tab-{{ s.id }} .brief" aria-label="Listen to this briefing">▶ Listen</button>{% endif %}
     <div class="brief">{{ s.briefing.summary | md }}</div>
     {% if s.briefing.on_radar %}
     <div class="radar">

@@ -36,6 +36,11 @@ also have it emailed to you.
 * **For you**: the stories you open teach the app which topics and sources you like; up to two matching stories per tab move to the top. Stored on each phone only; reset in the footer.
 * **Charts**: tap a price or rate tile for a 1-year chart; drag across it to read values.
 
+* **Morning essentials** on Today: Utrecht weather (Open-Meteo; change `location:` in `config.yaml`) and the euro → dirham rate (tap for its chart in the World tab).
+* **Listen**: ▶ on Today and on every tab reads the briefing aloud with the phone's own voice.
+* **Calendar**: "＋ Add to my calendar" on Today subscribes your phone's calendar to `calendar.ics`, every dated "Coming up" event from the last three weeks; it updates itself.
+* **Yield curve** (Rates): the euro AAA curve from 1 to 30 years today, a month ago and a year ago, with the 2s10s and 10s30s slopes.
+
 ## Settings
 
 The ⚙️ icon opens per-phone settings: theme (System, Light, Dark), text size,
