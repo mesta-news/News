@@ -115,7 +115,12 @@
     if (!index) {
       status.textContent = "Loading…";
       const res = await fetch("search.json", { cache: "no-cache" });
-      const raw = await res.json();
+      let raw = await res.json();
+      if (raw.locked) {  // site behind a passphrase: decrypt with this phone's key
+        const b64 = x => Uint8Array.from(atob(x), c => c.charCodeAt(0));
+        const key = await crypto.subtle.importKey("raw", b64(localStorage.getItem("brief-key")), "AES-GCM", false, ["decrypt"]);
+        raw = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(raw.iv) }, key, b64(raw.ct))));
+      }
       index = {
         items: raw.items.map(([date, sec, title, src, link]) => ({ date, sec, title, src, link, hay: norm(`${title} ${src} ${raw.sections[sec] || sec}`) })),
         briefs: raw.briefs.map(([date, sec, text]) => ({ date, sec, text, hay: norm(text) })),
@@ -416,6 +421,17 @@
     sdlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
     sdlg.addEventListener("click", e => { if (e.target === sdlg) close(); });
     $("settings-notify")?.addEventListener("click", () => { sdlg.close(); $("bell")?.click(); });
+    const lockBtn = $("settings-lock");
+    if (lockBtn) {
+      let hasKey = false;
+      try { hasKey = !!localStorage.getItem("brief-key"); } catch (e) {}
+      lockBtn.hidden = !hasKey;
+      lockBtn.addEventListener("click", e => {
+        e.preventDefault();
+        try { localStorage.removeItem("brief-key"); } catch (err) {}
+        location.reload();
+      });
+    }
     $("settings-reset").addEventListener("click", e => {
       e.preventDefault();
       try { localStorage.removeItem("brief-settings"); } catch (err) {}

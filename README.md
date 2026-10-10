@@ -41,6 +41,21 @@ also have it emailed to you.
 * **Calendar**: "＋ Add to my calendar" on Today subscribes your phone's calendar to `calendar.ics`, every dated "Coming up" event from the last three weeks; it updates itself.
 * **Yield curve** (Rates): the euro AAA curve from 1 to 30 years today, a month ago and a year ago, with the 2s10s and 10s30s slopes.
 
+## Privacy
+
+This repo is public, so two optional switches keep your brief private:
+
+* **Private data repo.** Create a private repo `<owner>/news-data` (or set the
+  variable `DATA_REPO` to another name) and a fine-grained token with
+  *Contents: Read and write* on only that repo, saved as the secret
+  `DATA_REPO_TOKEN`. The next run moves `data/` and `state/` there and deletes
+  them from this repo; after that the daily editions live only in the private
+  repo. (Old copies remain in this repo's git history until it is rewritten.)
+* **Passphrase.** Set the secret `SITE_PASSPHRASE`. Every page and the search
+  index are then published encrypted (AES-GCM, key from PBKDF2); each phone asks
+  for the passphrase once and remembers the derived key. Settings has "Lock
+  this phone". The calendar feed and notifications are not encrypted.
+
 ## Settings
 
 The ⚙️ icon opens per-phone settings: theme (System, Light, Dark), text size,
