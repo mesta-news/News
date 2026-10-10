@@ -92,6 +92,15 @@ python -m news_digest --no-ai       # skip Claude
 
 ## Cost
 
-GitHub Actions and Pages are free for this. Claude costs a few cents per daily
-digest, since it sends about six small requests with headlines only, not full
-articles. Use `effort: low` in `config.yaml` to make it cheaper.
+GitHub Actions and Pages are free for this. The Claude API is billed
+separately from a Claude.ai subscription (prepaid credits at
+console.anthropic.com). Rough cost of the daily digest (about six small
+requests with headlines only), set with `model:` in `config.yaml`:
+
+| Model | Approx. per month |
+|---|---|
+| `claude-opus-5-5` (default, best judgement) | ~$5–10 |
+| `claude-sonnet-5-5` | ~$3–5 |
+| `claude-haiku-5-5` | under $1 |
+
+Without an API key the digest still runs for free, with headlines only.
