@@ -657,7 +657,8 @@
     {% if vapid_public_key %}<button class="btn ghost" type="button" id="settings-notify">Notifications…</button>{% endif %}
     <button class="btn ghost" type="button" onclick="location.reload()">Reload</button>
   </div>
-  <p class="meta" style="margin-top:12px"><a href="#" id="settings-reset">Reset all settings</a></p>
+  <p class="meta" style="margin-top:12px"><a href="#" id="settings-reset">Reset all settings</a>
+    <a href="#" id="settings-lock" hidden> · Lock this phone (ask for the passphrase again)</a></p>
 </dialog>
 
 <dialog class="reader" id="reader" aria-labelledby="r-title">
