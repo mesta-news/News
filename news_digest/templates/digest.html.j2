@@ -4,14 +4,14 @@
 <title>The Daily Brief · {{ d.date_label }}</title>
 {% include "_head.html.j2" %}
 <style>
-  /* One colour per tab (from config.yaml); used for the tab, its page and its notifications. */
+  /* One colour per tab (from config.yaml). Only category names use it; rules and accents stay neutral. */
   {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[0] }}; }
   {% endfor %}
   @media (prefers-color-scheme: dark) {
     {% for s in d.sections if s.color %}[data-cat="{{ s.id }}"] { --cat: {{ s.color[1] or s.color[0] }}; }
     {% endfor %}
   }
-  [data-cat] .kicker, [data-cat].kicker { color: var(--cat); }
+  .panel-head > .kicker, .card > .kicker, .minute li > .kicker a { color: var(--cat, var(--teal)); }
 
   /* Section tabs */
   .tabs { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px;
@@ -27,13 +27,11 @@
   .tabs a.active { color: var(--ink); border-bottom-color: var(--claret); }
   .tabs .count { margin-left: 4px; padding: 1px 5px; border-radius: 8px; background: var(--panel);
                  color: var(--muted); font-size: .64rem; letter-spacing: 0; }
-  .tabs a::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px;
-                    border-radius: 2px; background: var(--cat, var(--claret)); vertical-align: 1px; }
   .tabs a.unread::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 5px;
-                         border-radius: 50%; background: var(--cat, var(--claret)); vertical-align: 2px; }
-  .tabs a.active { color: var(--cat, var(--ink)); border-bottom-color: var(--cat, var(--claret)); }
+                         border-radius: 50%; background: var(--claret); vertical-align: 2px; }
+  .tabs a.active { color: var(--cat, var(--ink)); border-bottom-color: var(--ink); }
   .tabs a.active::after { display: none; }
-  .tabs a.active .count { background: var(--cat, var(--claret)); color: var(--paper); }
+  .tabs a.active .count { background: var(--ink); color: var(--paper); }
 
   /* Black market ticker */
   .ticker { background: var(--tick-bg); color: var(--tick-ink); }
@@ -55,7 +53,7 @@
   @keyframes fade { from { opacity: .5; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .js .panel.active { animation: none; } }
   .panel { padding-top: 22px; }
-  .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--cat, var(--rule-strong)); }
+  .panel-head { padding-bottom: 12px; margin-bottom: 18px; border-bottom: 4px solid var(--rule-strong); }
   .panel-head h2 { margin: 6px 0 0; font: 600 clamp(1.7rem, 6.5vw, 2.3rem)/1.1 var(--serif); letter-spacing: -.015em; }
   .panel-head .meta { margin-top: 6px; }
 
@@ -73,7 +71,7 @@
 
   .cards { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 18px; }
   @media (min-width: 720px) { .cards { grid-template-columns: 1fr 1fr; column-gap: 32px; } }
-  .card { padding: 14px 0 18px; border-top: 3px solid var(--cat, var(--rule)); }
+  .card { padding: 16px 0 18px; border-top: 1px solid var(--rule); }
   .card-title { display: block; margin: 6px 0 4px; font: 600 1.22rem/1.25 var(--serif); text-decoration: none; }
   .card-title:hover { text-decoration: underline; text-underline-offset: 3px; }
   .standfirst { margin: 0; color: var(--ink-2); font-size: .92rem; }
@@ -82,19 +80,18 @@
   .card li a { text-decoration: none; }
   .card li a:hover { text-decoration: underline; }
   .more { display: inline-block; margin-top: 10px; font: 700 .7rem/1 var(--sans); letter-spacing: .08em;
-          text-transform: uppercase; color: var(--cat, var(--claret)); text-decoration: none; }
+          text-transform: uppercase; color: var(--claret); text-decoration: none; }
 
   /* Section body */
   .brief { font-size: .98rem; }
   .brief ul { margin: 0; padding: 0; list-style: none; }
   .brief li { position: relative; padding: 0 0 12px 16px; margin: 0 0 12px; border-bottom: 1px solid var(--rule); }
   .brief li:last-child { border-bottom: 0; margin-bottom: 0; }
-  .brief li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; background: var(--cat, var(--claret)); }
+  .brief li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; background: var(--claret); }
   .brief p { margin: 0 0 12px; }
   .brief strong { font: 700 1.02rem/1.3 var(--serif); }
 
-  .foryou { margin: 18px 0 4px; padding: 14px 16px; background: var(--teal-soft); border-left: 4px solid var(--cat, var(--teal));
-            background: color-mix(in srgb, var(--cat, var(--teal)) 10%, var(--paper)); }
+  .foryou { margin: 18px 0 4px; padding: 14px 16px; background: var(--teal-soft); border-left: 4px solid var(--teal); }
   .foryou ul { margin: 8px 0 0; padding-left: 18px; }
   .foryou li { margin: 0 0 6px; font-size: .94rem; }
   .foryou li:last-child { margin-bottom: 0; }
@@ -103,7 +100,19 @@
   .radar ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .radar li { display: flex; gap: 12px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: .92rem; }
   .radar li:first-child { border-top: 0; }
-  .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--cat, var(--claret)); font-variant-numeric: tabular-nums; }
+  .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--claret); font-variant-numeric: tabular-nums; }
+  .agenda { margin: 22px 0 6px; padding-top: 10px; border-top: 1px solid var(--rule-strong); }
+  .agenda ul { list-style: none; margin: 6px 0 0; padding: 0; }
+  .agenda li { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; line-height: 1.4; }
+  .agenda li:last-child { border-bottom: 0; }
+  .agenda .when { flex: none; width: 96px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .agenda .cat { margin-right: 4px; font: 700 .66rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--cat, var(--teal)); text-decoration: none; }
+  .explainer { margin: 18px 0 4px; padding: 0 16px; border: 1px solid var(--rule); background: var(--card); }
+  .explainer summary { padding: 12px 0; color: var(--ink); font: 600 1rem/1.35 var(--serif); letter-spacing: 0; text-transform: none; }
+  .explainer summary .kicker { margin-right: 6px; color: var(--teal); }
+  .explainer summary::after { color: var(--claret); font-family: var(--sans); }
+  .explainer p { margin: 0 0 14px; font-size: .94rem; color: var(--ink-2); }
   .stale { margin: 10px 0 0; padding: 8px 12px; font-size: .8rem; background: var(--alert-soft); color: var(--alert); }
   .alert { margin: 0 0 16px; padding: 12px 14px; background: var(--alert-soft); color: var(--alert); font-size: .9rem; }
   .alert a { font-weight: 700; }
@@ -131,11 +140,11 @@
 
   /* Stories */
   .label { margin: 26px 0 0; padding-top: 8px; border-top: 1px solid var(--rule-strong); }
-  [data-cat] .group-label { margin: 18px 0 0; color: var(--ink-2); }
+  .group-label { margin: 18px 0 0; color: var(--ink-2); }
   .stories { list-style: none; margin: 0; padding: 0; }
   .stories li { padding: 13px 0; border-bottom: 1px solid var(--rule); }
   .stories li:last-child { border-bottom: 0; }
-  .stories .src { font: 700 .66rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--cat, var(--teal)); }
+  .stories .src { font: 700 .66rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
   .stories a.hl { display: block; margin-top: 3px; font: 600 1.06rem/1.32 var(--serif); text-decoration: none; }
   .stories a.hl:hover { text-decoration: underline; text-underline-offset: 3px; }
   .stories .meta { margin-top: 3px; }
@@ -146,7 +155,6 @@
 
   details { margin-top: 6px; }
   a, button, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  .minute li[data-cat] { padding-left: 12px; border-left: 3px solid var(--cat); }
 
   /* Notification settings */
   dialog.notify { width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto;
@@ -259,6 +267,17 @@
     </div>
     {% endif %}
 
+    {% set coming = d | agenda %}
+    {% if coming %}
+    <div class="agenda">
+      <div class="kicker" style="color:var(--claret)">Coming up</div>
+      <ul>{% for e in coming %}
+        <li><span class="when num">{{ e.date.strftime("%a %-d %b") }}{% if e.time %}<br><small>{{ e.time }}</small>{% endif %}</span>
+          <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span></li>
+      {% endfor %}</ul>
+    </div>
+    {% endif %}
+
     <div class="cards">
       {% for s in d.sections %}
       {% set lead = s.briefing.summary | lead if s.briefing else none %}
@@ -353,6 +372,12 @@
       <div class="kicker">On the radar</div>
       <ul>{% for e in s.briefing.on_radar %}{% set when, _, what = e.partition(": ") %}<li>{% if what %}<span class="when">{{ when }}</span><span>{{ what }}</span>{% else %}<span>{{ e }}</span>{% endif %}</li>{% endfor %}</ul>
     </div>
+    {% endif %}
+    {% if s.briefing.explainer and s.briefing.explainer.title and s.briefing.explainer.text %}
+    <details class="explainer">
+      <summary><span class="kicker">Explainer</span> {{ s.briefing.explainer.title }}</summary>
+      <p>{{ s.briefing.explainer.text }}</p>
+    </details>
     {% endif %}
     {% if s.briefing.for_you %}
     <div class="foryou">

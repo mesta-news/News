@@ -15,7 +15,10 @@ profile: |
     research, Medicine, World.
   - He is a financial risk manager specialised in asset-liability management
     (ALM) at a Dutch retail bank (mortgages and savings), and builds software
-    with AI. His tabs: Banking, Rates, Markets, Energy, Business, AI, World.
+    with AI. His tabs: Banking, Rates, Markets, Energy, Business, AI, World,
+    Technology, Gaming. He plays on PlayStation and PC: Age of Empires, Gran
+    Turismo 7, GTA (waiting for GTA 6), Red Dead Redemption 2, Cyberpunk 2077,
+    Ghost of Tsushima / Ghost of Yotei, and likes open-world and racing games.
   - Both also follow general news from the Netherlands, Morocco and the world.
   - No stock holdings yet; they follow a watchlist and think in euros.
 
@@ -274,6 +277,52 @@ sections:
       - { q: 'OpenAI OR ChatGPT new model OR launch', lang: en }
       - { q: 'Google Gemini OR "DeepMind" model launch', lang: en }
       - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
+
+  - id: technology
+    title: "Technology - hardware, launches & deals"
+    short: "Technology"
+    emoji: "💻"
+    color: ["#0e7490", "#22d3ee"]   # light, dark: tab colour and notification icon
+    max_age_days: 3
+    max_items: 20
+    feeds:
+      - { name: "The Verge", url: "https://www.theverge.com/rss/index.xml" }
+      - { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" }
+      - { name: "Engadget", url: "https://www.engadget.com/rss.xml" }
+      - { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds/all" }
+      - { name: "Tweakers", url: "https://feeds.feedburner.com/tweakers/mixed" }
+    google_news:
+      - { q: 'Apple iPhone OR iPad OR Mac OR "Apple Watch" launch OR announces OR review', lang: en }
+      - { q: 'Samsung Galaxy OR "Google Pixel" OR OnePlus OR Xiaomi phone launch OR review', lang: en }
+      - { q: 'Nvidia GeForce OR "AMD Radeon" OR Ryzen OR Intel Core GPU OR CPU launch OR benchmark', lang: en }
+      - { q: 'laptop OR monitor OR headphones OR TV "best deal" OR "price drop" OR "lowest price"', lang: en }
+      - { q: 'aanbieding OR prijsdaling laptop OR smartphone OR tv OR koptelefoon', lang: nl }
+      - { q: 'EU "Digital Markets Act" OR "right to repair" OR USB-C tech regulation', lang: en }
+
+  - id: gaming
+    title: "Gaming"
+    short: "Gaming"
+    emoji: "🎮"
+    color: ["#4338ca", "#a5b4fc"]   # light, dark: tab colour and notification icon
+    max_age_days: 4
+    max_items: 20
+    # Big general feeds are filtered to the games and platforms he follows.
+    feeds:
+      - { name: "IGN", url: "https://feeds.ign.com/ign/all", keywords: [age of empires, aoe2, aoe4, age of mythology, gran turismo, gt7, polyphony, gta, grand theft auto, rockstar, red dead, rdr2, cyberpunk, cd projekt, witcher, ghost of, sucker punch, playstation, ps5, ps plus, xbox, steam, nintendo, switch 2, forza, open world, sale, deal, release date, trailer, patch, dlc, expansion] }
+      - { name: "GameSpot", url: "https://www.gamespot.com/feeds/mashup/", keywords: [age of empires, aoe2, aoe4, age of mythology, gran turismo, gt7, polyphony, gta, grand theft auto, rockstar, red dead, rdr2, cyberpunk, cd projekt, witcher, ghost of, sucker punch, playstation, ps5, ps plus, xbox, steam, nintendo, switch 2, forza, open world, sale, deal, release date, trailer, patch, dlc, expansion] }
+      - { name: "PC Gamer", url: "https://www.pcgamer.com/rss/", keywords: [age of empires, aoe2, aoe4, age of mythology, gran turismo, gt7, polyphony, gta, grand theft auto, rockstar, red dead, rdr2, cyberpunk, cd projekt, witcher, ghost of, sucker punch, playstation, ps5, ps plus, xbox, steam, nintendo, switch 2, forza, open world, sale, deal, release date, trailer, patch, dlc, expansion] }
+      - { name: "Eurogamer", url: "https://www.eurogamer.net/feed", keywords: [age of empires, aoe2, aoe4, age of mythology, gran turismo, gt7, polyphony, gta, grand theft auto, rockstar, red dead, rdr2, cyberpunk, cd projekt, witcher, ghost of, sucker punch, playstation, ps5, ps plus, xbox, steam, nintendo, switch 2, forza, open world, sale, deal, release date, trailer, patch, dlc, expansion] }
+      - { name: "PlayStation Blog", url: "https://blog.playstation.com/feed/" }
+      - { name: "Xbox Wire", url: "https://news.xbox.com/en-us/feed/", keywords: [age of empires, age of mythology, forza, game pass, release] }
+    google_news:
+      - { q: '"GTA 6" OR "GTA VI" OR "Grand Theft Auto VI" OR "Rockstar Games"', lang: en }
+      - { q: '"Gran Turismo 7" OR "Gran Turismo" update OR Polyphony', lang: en }
+      - { q: '"Age of Empires" OR "Age of Mythology" update OR expansion OR DLC', lang: en }
+      - { q: '"Cyberpunk 2077" OR "CD Projekt" OR "Witcher 4"', lang: en }
+      - { q: '"Ghost of Yotei" OR "Ghost of Tsushima" OR "Sucker Punch"', lang: en }
+      - { q: '"Red Dead Redemption" OR RDR2 OR "Red Dead 3"', lang: en }
+      - { q: 'PlayStation Plus OR "PS Store" OR Steam sale OR "game deals" this week', lang: en }
+      - { q: 'PS5 OR "PS5 Pro" OR "PlayStation 6" OR "Switch 2" OR Xbox console news', lang: en }
 
 # ---------------------------------------------------------------------------
 # Key interest rates
