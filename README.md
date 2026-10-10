@@ -8,7 +8,7 @@ A private daily news digest for the two of us. It covers:
 | 🔬 Clinical trials, regulation & medical affairs | EMA decisions, EU Clinical Trials Regulation / CTIS, ICH E6(R3) GCP, Dutch bodies (CCMO, CBG-MEB), drug safety, AI in clinical trials |
 | 🤖 AI – models, tools & techniques | Model releases and capabilities, developer tools and practical techniques (OpenAI, Google, Hugging Face, Simon Willison, Latent Space, Hacker News, Google News on Anthropic/Claude) |
 | 📈 Watchlist | Prices (1D/1W/1M/YTD and a 3-month sparkline) and headlines for Wolters Kluwer, ASML, Nvidia, Microsoft, Alphabet, Amazon, Meta, TSMC, the S&P 500, Nasdaq 100, AEX and EUR/USD |
-| 🏦 Interest rates & central banks | ECB, Fed and Bank of England announcements plus news on the BoJ, PBoC and SNB, and Dutch mortgage and savings rates. Tiles show the policy rates and bond yields (US 2y/10y, German Bund, Dutch DSL) with 1-month and 1-year changes, from FRED |
+| 🏦 Interest rates & central banks | ECB, Fed and Bank of England announcements plus news on the BoJ, PBoC and SNB, and Dutch mortgage and savings rates. Tiles show the ECB deposit rate, €STR, Euribor, the euro AAA curve (2y/10y/30y), the Dutch 10y and US yields with 1-month and 1-year changes, from the ECB Data Portal and Yahoo Finance |
 | 🏦 Dutch banking & ALM | Dutch banks (ING, ABN AMRO, Rabobank, de Volksbank, Brand New Day…), savings and mortgage rates, DNB / ECB / EBA supervision, IRRBB and liquidity regulation, the pension reform (Wtp) and the long end of the swap curve, the housing market. Rate tiles include €STR and 3M Euribor |
 | 🌍 Business & markets | A Reuters/Bloomberg-style morning picture (Reuters and Bloomberg via Google News, CNBC, BBC, MarketWatch, NOS Economie) |
 | 🩺 BIG register & diploma recognition | Material changes to the route for foreign-trained doctors (law, CIBG/CBGV procedure, AKV-/BI-toets). It also **watches the official BIG-register pages** and shows exactly what changed |
@@ -96,7 +96,7 @@ Everything is in [`config.yaml`](config.yaml):
   `OR`, `"exact phrase"`, `site:medischcontact.nl` and `-exclude`.
 * **`watch_pages`**: official pages to monitor for changes.
 * **`watchlist`**: Yahoo Finance symbols (Amsterdam stocks end in `.AS`).
-* **`rates`**: interest-rate series from [FRED](https://fred.stlouisfed.org); the ID is in the series page URL.
+* **`rates`**: interest-rate series from the [ECB Data Portal](https://data.ecb.europa.eu) (series key) or Yahoo Finance yield tickers.
 * **`model` / `effort`**: the Claude model and how hard it thinks.
 
 Changes to `config.yaml` on `main` trigger a fresh digest automatically.

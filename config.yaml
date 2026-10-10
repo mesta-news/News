@@ -173,20 +173,22 @@ sections:
       - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
 
 # ---------------------------------------------------------------------------
-# Key interest rates - series IDs from FRED (https://fred.stlouisfed.org).
-# Search FRED for a rate, then copy the ID from the page URL.
+# Key interest rates
+#   source: ecb   -> ECB Data Portal, id = "FLOW/KEY" (find series at
+#                    https://data.ecb.europa.eu, copy the series key)
+#   source: yahoo -> Yahoo Finance yield ticker (^TNX = US 10-year, etc.)
 # ---------------------------------------------------------------------------
 rates:
-  - { id: "ECBDFR",          name: "ECB deposit rate",       region: "Eurozone" }
-  - { id: "ECBESTRVOLWGTTRMDMNRT", name: "€STR",              region: "Eurozone overnight" }
-  - { id: "IR3TIB01EZM156N", name: "3M Euribor",             region: "Eurozone · monthly" }
-  - { id: "DFEDTARU",        name: "Fed funds (upper)",      region: "United States" }
-  - { id: "IUDSOIA",         name: "SONIA overnight",        region: "United Kingdom" }
-  - { id: "IRSTCB01JPM156N", name: "BoJ policy rate",        region: "Japan · monthly" }
-  - { id: "DGS2",            name: "2-year Treasury",        region: "United States" }
-  - { id: "DGS10",           name: "10-year Treasury",       region: "United States" }
-  - { id: "IRLTLT01DEM156N", name: "10-year Bund",           region: "Germany · monthly" }
-  - { id: "IRLTLT01NLM156N", name: "10-year DSL",            region: "Netherlands · monthly" }
+  - { source: ecb,   id: "FM/D.U2.EUR.4F.KR.DFR.LEV",             name: "ECB deposit rate", region: "Eurozone · policy" }
+  - { source: ecb,   id: "EST/B.EU000A2X2A25.WT",                  name: "€STR",             region: "Eurozone · overnight" }
+  - { source: ecb,   id: "FM/M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",     name: "3M Euribor",       region: "Eurozone · monthly avg" }
+  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",     name: "2Y euro curve",    region: "AAA govt spot rate" }
+  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",    name: "10Y euro curve",   region: "AAA govt spot rate" }
+  - { source: ecb,   id: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y",    name: "30Y euro curve",   region: "AAA govt spot rate" }
+  - { source: ecb,   id: "IRS/M.NL.L.L40.CI.0000.EUR.N.Z",         name: "10Y Dutch DSL",    region: "Netherlands · monthly" }
+  - { source: yahoo, id: "^IRX",                                   name: "US 3-month bill",  region: "United States" }
+  - { source: yahoo, id: "^TNX",                                   name: "US 10-year",       region: "United States" }
+  - { source: yahoo, id: "^TYX",                                   name: "US 30-year",       region: "United States" }
 
 # ---------------------------------------------------------------------------
 # Watchlist - quotes come from Yahoo Finance symbols.
