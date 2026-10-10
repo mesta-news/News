@@ -61,8 +61,9 @@ jobs:
           git config user.email "digest-bot@users.noreply.github.com"
           git add data state
           git diff --cached --quiet || git commit -m "Digest $(date -u +%F)"
-          # Someone may have pushed while this run was building.
-          git pull --rebase origin "$GITHUB_REF_NAME"
+          # Someone (or another run) may have pushed while this run was building.
+          # On a clash in data/ or state/, keep this run's newer files.
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME"
           git push
 
       - uses: actions/upload-pages-artifact@v3
