@@ -44,11 +44,16 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           DIGEST_EMAIL_TO: ${{ secrets.DIGEST_EMAIL_TO }}
+          # App notifications: the signing key (secret) and one code per phone (variable).
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_SUBSCRIPTIONS: ${{ vars.PUSH_SUBSCRIPTIONS }}
           DIGEST_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
         run: |
-          EMAIL_FLAG=""
-          if [ "${{ github.event_name }}" = "schedule" ]; then EMAIL_FLAG="--email"; fi
-          python -m news_digest $EMAIL_FLAG
+          FLAGS=""
+          if [ "${{ github.event_name }}" = "schedule" ]; then FLAGS="--email --push"; fi
+          # A manual run ("Run workflow") also notifies, so you can test notifications.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then FLAGS="--push"; fi
+          python -m news_digest $FLAGS
 
       - name: Save history
         run: |

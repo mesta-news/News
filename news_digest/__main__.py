@@ -24,7 +24,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from . import markets, pages, rates, sources, summarize
+from . import icons, markets, pages, push, rates, sources, summarize
 from .notify import send_email
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -84,6 +84,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool) -> dict:
             it.is_new = first == today  # re-running on the same day keeps items "new"
         return {
             "id": sec["id"], "title": sec["title"], "short": sec.get("short", ""),
+            "emoji": sec.get("emoji", ""), "color": sec.get("color"),
             "max_items": sec.get("max_items", 15),
             "items": [i.to_dict() for i in items[: sec.get("max_items", 15) + 30]],
             "errors": errors,
@@ -230,13 +231,21 @@ def jinja_env() -> Environment:
     return env
 
 
-def render_site(data_dir: Path, out_dir: Path) -> str:
+def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
     """Render index.html, one page per day and archive.html. Returns index HTML."""
     env = jinja_env()
     out_dir.mkdir(parents=True, exist_ok=True)
     # App files: manifest, icons and the offline service worker.
     for f in (Path(__file__).parent / "static").iterdir():
         shutil.copy(f, out_dir / f.name)
+    # Tab colours and emoji come from the config, so older editions pick them up too.
+    style = {s["id"]: s for s in (cfg or {}).get("sections", [])}
+    for sid, sec in style.items():
+        if sec.get("color"):
+            (out_dir / f"icon-cat-{sid}.png").write_bytes(icons.disc_png(sec["color"][0]))
+    (out_dir / "badge-72.png").write_bytes(icons.badge_png())
+    key = push.private_key()
+    env.globals["vapid_public_key"] = push.public_key_b64(key) if key else ""
     files = sorted(data_dir.glob("*.json"), reverse=True)[:SITE_DAYS]
     entries, index_html = [], ""
     page = env.get_template("digest.html.j2")
@@ -244,6 +253,9 @@ def render_site(data_dir: Path, out_dir: Path) -> str:
         d = load_json(f, None)
         if not d:
             continue
+        for s in d["sections"]:
+            s.update({k: style[s["id"]][k] for k in ("emoji", "color")
+                      if s["id"] in style and style[s["id"]].get(k)})
         out = page.render(d=d)
         (out_dir / f"{d['date']}.html").write_text(out)
         if not index_html:
@@ -267,18 +279,23 @@ def main() -> None:
     ap.add_argument("--no-ai", action="store_true", help="skip Claude summaries")
     ap.add_argument("--render-only", action="store_true", help="only re-render from --data")
     ap.add_argument("--email", action="store_true", help="email the digest (needs SMTP_* env vars)")
+    ap.add_argument("--push", action="store_true",
+                    help="send app notifications (needs VAPID_PRIVATE_KEY and PUSH_SUBSCRIPTIONS)")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
+    cfg = yaml.safe_load(args.config.read_text())
+    digest = None
     if not args.render_only:
-        cfg = yaml.safe_load(args.config.read_text())
         digest = build(cfg, args.state, use_ai=not args.no_ai)
         save_json(args.data / f"{digest['date']}.json", digest)
         log.info("digest %s: %d new articles", digest["date"],
                  sum(s["new_count"] for s in digest["sections"]))
-    index_html = render_site(args.data, args.out)
+    index_html = render_site(args.data, args.out, cfg)
     if args.email:
         send_email(index_html, os.environ.get("DIGEST_URL", ""))
+    if args.push and digest:
+        push.notify_all(digest, os.environ.get("DIGEST_URL", ""))
 
 
 if __name__ == "__main__":
