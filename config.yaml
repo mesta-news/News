@@ -46,7 +46,7 @@ seen_retention_days: 60
 sections:
   - id: big
     title: "Foreign doctors & BIG registration"
-    icon: "🩺"
+    short: "BIG registration"
     max_age_days: 21
     max_items: 15
     google_news:
@@ -68,7 +68,7 @@ sections:
 
   - id: jobs
     title: "Dutch healthcare job market"
-    icon: "🏥"
+    short: "Jobs"
     max_age_days: 7
     max_items: 15
     google_news:
@@ -81,7 +81,7 @@ sections:
 
   - id: ai
     title: "AI - models, tools & techniques"
-    icon: "🤖"
+    short: "AI"
     max_age_days: 3
     max_items: 20
     feeds:
@@ -99,16 +99,33 @@ sections:
       - { q: '"AI agents" OR "coding agent" OR "open-weight model" release', lang: en }
 
   - id: watchlist
-    title: "Watchlist news"
-    icon: "📈"
+    title: "Markets & watchlist"
+    short: "Markets"
     max_age_days: 4
     max_items: 20
     # Feeds for this section are generated from the watchlist below
     # (each entry's `news` query + Yahoo Finance headlines).
 
+  - id: rates
+    title: "Interest rates & central banks"
+    short: "Rates"
+    max_age_days: 4
+    max_items: 15
+    feeds:
+      - { name: "ECB press releases", url: "https://www.ecb.europa.eu/rss/press.html" }
+      - { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml" }
+      - { name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" }
+    google_news:
+      - { q: 'ECB interest rates OR "rate decision" OR Lagarde', lang: en }
+      - { q: '"Federal Reserve" OR Fed rate cut OR "rate hike" OR Powell', lang: en }
+      - { q: '"Bank of England" OR "Bank of Japan" OR "People''s Bank of China" OR SNB interest rate', lang: en }
+      - { q: 'bond yields Treasury OR Bund OR "rate expectations"', lang: en }
+      - { q: 'rente ECB OR hypotheekrente OR spaarrente', lang: nl }
+    # Data for the rate tiles comes from the `rates:` list below.
+
   - id: business
     title: "Business & markets"
-    icon: "🌍"
+    short: "Business"
     max_age_days: 2
     max_items: 20
     feeds:
@@ -121,6 +138,20 @@ sections:
       - { q: 'site:reuters.com markets OR economy OR business', lang: en }
       - { q: 'site:bloomberg.com markets OR economy', lang: en }
       - { q: 'ECB OR "Federal Reserve" rates inflation', lang: en }
+
+# ---------------------------------------------------------------------------
+# Key interest rates - series IDs from FRED (https://fred.stlouisfed.org).
+# Search FRED for a rate, then copy the ID from the page URL.
+# ---------------------------------------------------------------------------
+rates:
+  - { id: "ECBDFR",          name: "ECB deposit rate",       region: "Eurozone" }
+  - { id: "DFEDTARU",        name: "Fed funds (upper)",      region: "United States" }
+  - { id: "IUDSOIA",         name: "SONIA overnight",        region: "United Kingdom" }
+  - { id: "IRSTCB01JPM156N", name: "BoJ policy rate",        region: "Japan · monthly" }
+  - { id: "DGS2",            name: "2-year Treasury",        region: "United States" }
+  - { id: "DGS10",           name: "10-year Treasury",       region: "United States" }
+  - { id: "IRLTLT01DEM156N", name: "10-year Bund",           region: "Germany · monthly" }
+  - { id: "IRLTLT01NLM156N", name: "10-year DSL",            region: "Netherlands · monthly" }
 
 # ---------------------------------------------------------------------------
 # Watchlist - quotes come from Yahoo Finance symbols.
