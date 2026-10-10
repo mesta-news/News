@@ -45,18 +45,30 @@ TOP_SCHEMA = {
 }
 
 SECTION_FOCUS = {
-    "big": (
-        "Focus on anything that changes the route for a foreign-trained doctor to "
-        "practise in the Netherlands: BIG-register / CIBG / CBGV procedures, laws "
-        "(Wet BIG), exams (AKV-toets, BI-toets, language tests), waiting times, "
-        "costs, fast-track or pilot programmes. State clearly whether something is "
-        "decided, proposed, or only discussed. When an official page changed, "
-        "explain the change in plain words."
+    "careers": (
+        "Focus on what helps her land a non-clinical role in clinical research or "
+        "life sciences in the Netherlands: which CROs, pharma and biotech companies "
+        "are hiring, expanding, opening or closing sites, or cutting jobs (especially "
+        "around Utrecht, Leiden and Amsterdam); demand for CRAs, clinical operations, "
+        "medical affairs, medical information, MSLs, pharmacovigilance and medical "
+        "training roles; language expectations (English vs Dutch). Name the company "
+        "and location. Suggest concrete next steps when there is an opening."
     ),
-    "jobs": (
-        "Focus on what helps her find a job: shortages by specialty or region, "
-        "hiring of ANIOS/basisartsen, collective agreements, salary changes, roles "
-        "open to doctors who are still in the registration process."
+    "research": (
+        "Focus on the knowledge an aspiring CRA / medical affairs professional should "
+        "keep current: EMA and CHMP/PRAC decisions, the EU Clinical Trials "
+        "Regulation and CTIS, ICH E6(R3) GCP, Dutch bodies (CCMO, METCs, CBG-MEB), "
+        "pharmacovigilance and drug safety, decentralised trials, real-world evidence "
+        "and AI in clinical trials. Explain terms briefly and point out anything "
+        "worth mentioning in an interview."
+    ),
+    "big": (
+        "She is not pursuing BIG registration now, so only report material changes "
+        "to the route for foreign-trained (non-EU) doctors: law changes (Wet BIG), "
+        "the CIBG/CBGV procedure, exams (AKV-toets, BI-toets), language "
+        "requirements, waiting times or costs. State clearly whether something is "
+        "decided, proposed, or only discussed. If nothing material happened, say so "
+        "in one bullet."
     ),
     "ai": (
         "Focus on what a builder can use now: new model releases and their "
@@ -98,6 +110,11 @@ Rules:
 
 
 CLI_TIMEOUT = 600
+
+
+def profile(cfg: dict) -> str:
+    """Reader profile: the DIGEST_PROFILE secret if set, else config.yaml."""
+    return os.environ.get("DIGEST_PROFILE", "").strip() or cfg.get("profile", "")
 
 
 def _client():
@@ -223,7 +240,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     system = (
         INSTRUCTIONS.format(language=cfg.get("language", "English"))
         + "\nSection focus: " + SECTION_FOCUS.get(section["id"], "")
-        + "\n\nReader profile:\n" + cfg.get("profile", "")
+        + "\n\nReader profile:\n" + profile(cfg)
     )
     user = "<section_data>\n" + json.dumps(payload, ensure_ascii=False, indent=1) + "\n</section_data>"
     return _call(client, cfg, system, user, SECTION_SCHEMA)
@@ -240,7 +257,7 @@ def top_briefing(client, cfg: dict, sections: list[dict]) -> list[str]:
         f"{cfg.get('language', 'English')}. Pick the 3-5 developments that matter most "
         "to the reader profile below. One bullet each, plain text, at most two short "
         "sentences (about 35 words). Use only the section summaries given.\n\nReader profile:\n"
-        + cfg.get("profile", "")
+        + profile(cfg)
     )
     user = json.dumps(summaries, ensure_ascii=False, indent=1)
     out = _call(client, cfg, system, user, TOP_SCHEMA)
