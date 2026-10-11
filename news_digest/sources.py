@@ -38,6 +38,7 @@ class Item:
     is_new: bool = True
     note: str = ""  # filled in by the AI summariser
     group: str = ""  # optional sub-heading within a section (e.g. "Morocco")
+    alt: list[str] = field(default_factory=list)  # links to the same story at other outlets
 
     def to_dict(self) -> dict:
         return {
@@ -51,6 +52,7 @@ class Item:
             "is_new": self.is_new,
             "note": self.note,
             "group": self.group,
+            "alt": self.alt[:4],
         }
 
 
@@ -176,10 +178,13 @@ def collect(section: dict, watchlist: list[dict], now: datetime) -> tuple[list[I
         if existing is None:
             merged[it.id] = it
             continue
-        # Same story from another source: remember the extra coverage.
+        # Same story from another source: remember the extra coverage (and its link,
+        # so the reader can fall back to it when the first outlet can't be read).
         for s in it.sources:
             if s not in existing.sources:
                 existing.sources.append(s)
+        if it.link != existing.link and it.link not in existing.alt:
+            existing.alt.append(it.link)
         if not existing.snippet and it.snippet:
             existing.snippet = it.snippet
 

@@ -211,10 +211,26 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
     elif use_ai:
         log.info("No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY - skipping AI summaries")
 
+    # Stories already shown earlier keep the summary, picture and links they had then.
+    earlier_items = {}
+    for d in reversed(history):  # newest edition last, so it wins
+        for s in d.get("sections", []):
+            for i in s.get("items", []):
+                if i.get("summary"):
+                    earlier_items[i["id"]] = i
+    for sec in sections:
+        for it in sec["items"]:
+            old = earlier_items.get(it["id"])
+            if old and not it.get("summary"):
+                for k in ("summary", "key_points", "context", "image", "url"):
+                    if old.get(k) and not it.get(k):
+                        it[k] = old[k]
+
     for sec in sections:
         sec.pop("previous_briefing", None)  # only an input for Claude; already in yesterday's file
         for it in sec["items"]:
             it.pop("_text", None)  # article text is never stored or published
+            it.pop("_thin", None)
 
     # Forget old "seen" ids so the state file stays small.
     keep_after = (now - timedelta(days=cfg.get("seen_retention_days", 60))).date().isoformat()

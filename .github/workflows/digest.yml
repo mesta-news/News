@@ -20,7 +20,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       # Personal data (daily editions, state) lives in a private repo when DATA_REPO_TOKEN is set.
       PRIVATE_DATA: ${{ secrets.DATA_REPO_TOKEN != '' }}

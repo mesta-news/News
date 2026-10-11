@@ -366,6 +366,17 @@
     $("r-also").textContent = (a.also || []).length ? `Also reported by ${a.also.join(", ")}` : "";
     $("r-also").hidden = !(a.also || []).length;
     showCharts(`${a.t} ${a.sum || ""} ${(a.kp || []).join(" ")}`, a.t);
+    // No summary (paywalled or blocked): say so, and show related coverage from the same tab.
+    $("r-nosum").hidden = !!a.sum;
+    if (!a.sum) {
+      const rel = related(a.sec, `${a.t} ${a.snip || ""} ${a.note || ""}`, []);
+      const ids = rel.fallback ? [] : rel.ids.filter(x => x !== id && ART[x] && ART[x].sum).slice(0, 4);
+      $("r-rel-box").querySelector(".kicker").textContent = "Related coverage";
+      $("r-rel").innerHTML = ids.map(x => { const r = ART[x];
+        return `<li data-rel="${esc(x)}"><div class="src">${esc(r.s || "")}</div><a class="hl" href="${esc(r.l)}">${esc(r.t)}</a>
+          <div class="snippet">${esc(r.sum)}</div><div class="meta">${esc(shortDate(r.d))} · tap for key points and source</div></li>`; }).join("");
+      $("r-rel-box").hidden = !ids.length;
+    }
     $("r-sum-box").hidden = !a.sum;
     $("r-note").textContent = a.note || "";
     $("r-note-box").hidden = !a.note;
@@ -431,7 +442,7 @@
       img.onerror = () => { if (token === imgToken) img.hidden = true; };
       img.src = ART[photoId].img;
     }
-    $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-also").hidden = true;
+    $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-also").hidden = $("r-nosum").hidden = true;
     $("r-sum").textContent = body;
     $("r-sum-box").hidden = !body;
     $("r-note-box").hidden = true;
