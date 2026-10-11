@@ -226,11 +226,9 @@
   }
 
   let current = null;
-  document.addEventListener("click", e => {
-    const tile = e.target.closest(".tile[data-chart]");
-    const c = tile && charts[tile.id];
-    if (!c || !dlg || c.points.length < 2) return;  // no history yet: the tile keeps opening its source
-    e.preventDefault();
+  function openChart(id) {
+    const c = charts[id];
+    if (!c || !dlg || c.points.length < 2) return false;  // no history yet: the tile keeps opening its source
     current = c;
     $("chart-title").textContent = c.name;
     $("chart-sub").textContent = c.sub;
@@ -240,6 +238,47 @@
     if (c.url) src.href = c.url;
     dlg.showModal();
     draw(c);
+    return true;
+  }
+  document.addEventListener("click", e => {
+    const tile = e.target.closest(".tile[data-chart]");
+    if (tile && openChart(tile.id)) e.preventDefault();
+  });
+
+  // Charts for the instruments a story mentions (ASML, Brent, ECB deposit rate, ...).
+  function chartsFor(text, title = "") {
+    const out = [], first = [];
+    for (const [id, c] of Object.entries(charts)) {
+      const name = c.name.replace(/\(.*?\)/g, "").replace(/→/g, "").trim();
+      const sym = (c.sub || "").split(/[ ·.=^]/).filter(Boolean)[0] || "";
+      const keys = [name, sym.length >= 3 && /^[A-Z]+$/.test(sym) ? sym : ""].filter(k => k && k.length >= 3);
+      const hit = keys.some(k => k.length <= 4
+        ? new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text)             // short names: exact case (ING, ASML)
+        : new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text));
+      if (!hit || c.points.length < 2) continue;
+      // Instruments named in the headline come first.
+      (title && keys.some(k => title.toLowerCase().includes(k.toLowerCase())) ? first : out).push(id);
+    }
+    return [...first, ...out].slice(0, 2);
+  }
+  function miniChart(id) {
+    const c = charts[id], p = c.points, vals = p.map(x => x[1]);
+    const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+    const line = vals.map((v, i) => `${(i / (vals.length - 1) * 300).toFixed(1)},${(40 - (v - lo) / span * 36).toFixed(1)}`).join(" ");
+    const ch = change(c);
+    return `<button type="button" class="mini-chart" data-chart-id="${esc(id)}"><b>${esc(c.name)}</b><span class="v num">${esc(fmt(vals[vals.length - 1], c.kind))}</span>
+      <span class="meta">${esc(c.sub || "")}</span><span class="${ch.up ? "up" : "down"}">${esc(ch.text.replace(" over the period", " in a year"))}</span>
+      <svg viewBox="0 0 300 44" preserveAspectRatio="none"><polyline fill="none" stroke="${ch.up ? "var(--up)" : "var(--down)"}" stroke-width="2"
+        vector-effect="non-scaling-stroke" points="${line}"/></svg></button>`;
+  }
+  function showCharts(text, title) {
+    const ids = chartsFor(text, title);
+    $("r-charts").innerHTML = ids.map(miniChart).join("");
+    $("r-chart-box").hidden = !ids.length;
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".mini-chart[data-chart-id]");
+    if (b) openChart(b.dataset.chartId);
   });
   $("chart-close")?.addEventListener("click", () => dlg.close());
   dlg?.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
@@ -278,6 +317,24 @@
     reader.scrollTop = 0;
   }
 
+  // The article's own picture, or an illustration in the tab's colour when there is
+  // none (or it fails to load). The token stops a slow picture from an earlier story
+  // appearing on the one now open.
+  let imgToken = 0;
+  function setPicture(a) {
+    const img = $("r-img"), illu = $("r-illu"), token = ++imgToken;
+    img.hidden = true;
+    img.onload = img.onerror = null;
+    img.removeAttribute("src");
+    $("r-illu-emoji").textContent = (ART._emoji || {})[a.sec] || "📰";
+    $("r-illu-src").textContent = a.s || "";
+    illu.hidden = false;
+    if (!a.img) return;
+    img.onload = () => { if (token === imgToken) { img.hidden = false; illu.hidden = true; } };
+    img.onerror = () => { if (token === imgToken) { img.hidden = true; illu.hidden = false; } };
+    img.src = a.img;
+  }
+
   function openReader(id, list) {
     const a = articleFor(id);
     if (!a || !reader) return false;
@@ -288,12 +345,15 @@
     $("r-sec").textContent = a.sec ? label(a.sec) : "";
     $("r-title").textContent = a.t;
     $("r-meta").textContent = [a.s + (a.n > 1 ? ` and ${a.n - 1} more` : ""), shortDate(a.d)].filter(Boolean).join(" · ");
-    const img = $("r-img");
-    img.hidden = true;
-    img.onload = () => { img.hidden = false; };
-    img.onerror = () => { img.hidden = true; };
-    if (a.img) img.src = a.img; else img.removeAttribute("src");
+    setPicture(a);
     $("r-sum").textContent = a.sum || "";
+    $("r-kp").innerHTML = (a.kp || []).map(k => `<li>${esc(k)}</li>`).join("");
+    $("r-kp-box").hidden = !(a.kp || []).length;
+    $("r-ctx").textContent = a.ctx || "";
+    $("r-ctx-box").hidden = !a.ctx;
+    $("r-also").textContent = (a.also || []).length ? `Also reported by ${a.also.join(", ")}` : "";
+    $("r-also").hidden = !(a.also || []).length;
+    showCharts(`${a.t} ${a.sum || ""} ${(a.kp || []).join(" ")}`, a.t);
     $("r-sum-box").hidden = !a.sum;
     $("r-note").textContent = a.note || "";
     $("r-note-box").hidden = !a.note;
@@ -347,7 +407,11 @@
     else { const m = t.text.match(/^(.+?[.!?])\s+(.*)$/s); title = m ? m[1] : t.text; body = m ? m[2] : ""; }
     $("r-title").textContent = title;
     $("r-meta").textContent = t.where || `From the ${label(t.sec)} briefing`;
+    ++imgToken;  // a picture still loading for an earlier story must not appear here
     $("r-img").hidden = true;
+    $("r-img").removeAttribute("src");
+    $("r-illu").hidden = true;
+    $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-also").hidden = true;
     $("r-sum").textContent = body;
     $("r-sum-box").hidden = !body;
     $("r-note-box").hidden = true;
@@ -357,7 +421,8 @@
       : rel.fallback ? `Top stories in ${label(t.sec)}` : "Related articles";
     $("r-rel").innerHTML = ids.map(id => { const a = ART[id];
       return `<li data-rel="${esc(id)}"><div class="src">${esc(a.s || "")}</div><a class="hl" href="${esc(a.l)}">${esc(a.t)}</a>
-        <div class="meta">${esc(shortDate(a.d))}${a.sum ? " · summary available" : ""}</div></li>`; }).join("");
+        ${a.sum ? `<div class="snippet">${esc(a.sum)}</div>` : ""}<div class="meta">${esc(shortDate(a.d))} · tap for key points and source</div></li>`; }).join("");
+    showCharts(`${t.text} ${ids.map(id => ART[id].t).join(" ")}`);
     $("r-rel-box").hidden = !ids.length;
     $("r-link").href = `#${t.sec}`;
     $("r-link").textContent = `Open the ${label(t.sec)} tab`;
