@@ -193,12 +193,15 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
                 sec["errors"].append("AI summary failed for this section (see workflow log).")
                 continue
             notes = {h["id"]: h["note"] for h in brief["highlights"]}
-            summaries = {a["id"]: a["summary"] for a in brief.get("article_summaries") or []}
+            summaries = {a["id"]: a for a in brief.get("article_summaries") or []}
             brief.pop("article_summaries", None)  # stored on the items instead
             for it in sec["items"]:
                 it["note"] = notes.get(it["id"], "")
-                if summaries.get(it["id"]):
-                    it["summary"] = summaries[it["id"]]
+                a = summaries.get(it["id"])
+                if a and a.get("summary"):
+                    it["summary"] = a["summary"]
+                    it["key_points"] = [k for k in a.get("key_points") or [] if k.strip()][:6]
+                    it["context"] = (a.get("context") or "").strip()
             # Put the highlighted articles first (sort is stable, so ranking is kept).
             sec["items"].sort(key=lambda i: not i["note"])
             alert = brief.get("alert") or {}
@@ -429,16 +432,29 @@ def _charts(d: dict) -> dict:
     return out
 
 
+def _outlets(sources: list[str]) -> list[str]:
+    """Outlet names without our feed labels ("Yahoo Finance - Alphabet" -> "Yahoo Finance"), de-duplicated."""
+    out = []
+    for name in sources:
+        name = re.sub(r"^(Yahoo Finance|Google News)\b.*$", r"\1", name).strip()
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
 def _articles(d: dict) -> dict:
     """What the in-app reader shows for each story on the page, keyed by story id.
     `_refs` maps each section to the article ids behind each briefing bullet."""
-    out = {"_refs": {s["id"]: (s.get("briefing") or {}).get("summary_refs") or [] for s in d["sections"]}}
+    out = {"_refs": {s["id"]: (s.get("briefing") or {}).get("summary_refs") or [] for s in d["sections"]},
+           "_emoji": {s["id"]: s.get("emoji", "") for s in d["sections"]}}
     for s in d["sections"]:
         for i in s["items"]:
             out.setdefault(i["id"], {k: v for k, v in {
                 "t": i["title"], "l": i.get("url") or i["link"], "sec": s["id"],
-                "s": i["sources"][0] if i["sources"] else "", "n": len(i["sources"]),
+                "s": (_outlets(i["sources"]) or [""])[0], "n": len(_outlets(i["sources"])),
                 "d": i["published"][:10], "sum": i.get("summary", ""), "note": i.get("note", ""),
+                "kp": i.get("key_points") or [], "ctx": i.get("context", ""),
+                "also": _outlets(i["sources"])[1:6],
                 "snip": i.get("snippet", "") if i.get("is_new") else "", "img": i.get("image", ""),
             }.items() if v})
     return out

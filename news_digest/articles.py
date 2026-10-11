@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 log = logging.getLogger(__name__)
 
 TIMEOUT = 12
-TEXT_LIMIT = 1500  # characters of article text handed to Claude
+TEXT_LIMIT = 3500  # characters of article text handed to Claude (enough for key points)
 HEADERS = {
     # A normal browser user agent: many news sites refuse unknown clients.
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
@@ -115,5 +115,37 @@ def enrich(sections: list[dict], per_section: int = 8) -> None:
     todo = [i for s in sections for i in [x for x in s["items"] if x["is_new"]][:per_section]]
     with ThreadPoolExecutor(max_workers=10) as pool:
         list(pool.map(_fetch, todo))
+    drop_generic_images(todo)
     got = sum(1 for i in todo if i.get("_text"))
     log.info("articles: read %d of %d shown articles", got, len(todo))
+
+
+GENERIC = re.compile(r"logo|default|placeholder|fallback|favicon|icon|share[-_]?image|og[-_]?image|brand", re.I)
+
+
+FILE_NOISE = {"image", "images", "photo", "featured", "thumb", "thumbnail", "scaled", "copy", "large", "medium",
+              "small", "header", "hero", "cover", "jpeg", "webp", "wide", "crop", "upload", "uploads", "content",
+              "article", "news", "final", "edit", "main", "getty", "shutterstock", "reuters", "istock"}
+
+
+def image_matches_title(image: str, title: str) -> bool:
+    """False when the picture's file name clearly names a subject the headline doesn't
+    mention (e.g. gta-6-trailer.jpg on an OpenAI story); unnamed files pass."""
+    name = re.sub(r"\.[a-z0-9]{2,5}$", "", image.rsplit("/", 1)[-1].split("?")[0].lower())
+    words = {w for w in re.findall(r"[a-z]{4,}", name) if w not in FILE_NOISE}
+    if len(words) < 2:
+        return True
+    head = title.lower()
+    return any(w in head or w[:5] in head for w in words)
+
+
+def drop_generic_images(items: list[dict]) -> None:
+    """Remove pictures that don't belong to the story: site logos and default share
+    images, and any image a site reuses for several different articles."""
+    from collections import Counter
+    uses = Counter(i["image"] for i in items if i.get("image"))
+    for i in items:
+        img = i.get("image")
+        if img and (uses[img] > 1 or GENERIC.search(img.rsplit("/", 1)[-1])
+                    or not image_matches_title(img, i.get("title", ""))):
+            del i["image"]
