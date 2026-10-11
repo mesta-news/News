@@ -103,6 +103,8 @@
   .radar li { display: flex; gap: 12px; padding: 7px 0; border-top: 1px solid var(--rule); font-size: .92rem; }
   .radar li:first-child { border-top: 0; }
   .radar .when { flex: none; min-width: 64px; font-weight: 700; color: var(--claret); font-variant-numeric: tabular-nums; }
+  .quiet-line { margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--rule); }
+  .quiet-line a { color: var(--muted); }
   .agenda { margin: 22px 0 6px; padding-top: 10px; border-top: 1px solid var(--rule-strong); }
   .agenda ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .agenda li { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; line-height: 1.4; }
@@ -446,7 +448,9 @@
         {% for b in d.top %}
         {% if b is mapping %}
         {% set sec = d.sections | selectattr("id", "equalto", b.section) | first %}
+        {% if not (sec and sec | quiet) %}
         <li data-cat="{{ b.section }}"><div class="kicker"><a href="#{{ b.section }}" data-tab="{{ b.section }}">{{ sec.short or sec.title if sec else b.section }}</a></div><p>{{ b.text }}</p></li>
+        {% endif %}
         {% else %}<li><p>{{ b }}</p></li>{% endif %}
         {% endfor %}
       </ol>
@@ -465,8 +469,10 @@
     </div>
     {% endif %}
 
+    {# Only tabs with something to report get a card; quiet ones are listed once below. #}
+    {% set quiet_tabs = d.sections | select("quiet") | list %}
     <div class="cards">
-      {% for s in d.sections %}
+      {% for s in d.sections if not s | quiet %}
       {% set lead = s.briefing.summary | lead if s.briefing else none %}
       {% set fresh = s["items"] | selectattr("is_new") | list %}
       <div class="card" data-cat="{{ s.id }}">
@@ -486,6 +492,9 @@
       </div>
       {% endfor %}
     </div>
+    {% if quiet_tabs %}
+    <p class="meta quiet-line">Quiet today: {% for s in quiet_tabs %}<a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.short or s.title }}</a>{{ ", " if not loop.last }}{% endfor %}.</p>
+    {% endif %}
   </article>
 
   {% if d.weekly %}

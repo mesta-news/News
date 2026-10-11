@@ -491,13 +491,27 @@ def _search_index(digests: list[dict]) -> dict:
     return {"sections": sections, "items": items, "briefs": briefs}
 
 
+QUIET = re.compile(r"^(no|nothing|quiet|none)\b|\bno (new|major|significant|meaningful|notable|fresh)\b|"
+                   r"\bnothing (new|major|significant|meaningful|notable)\b", re.I)
+
+
+def _quiet(s: dict) -> bool:
+    """A tab with nothing to report today: no new stories, Claude marked it quiet,
+    or (editions from before the `quiet` flag) its lead says so."""
+    brief = s.get("briefing") or {}
+    if not s.get("new_count") or brief.get("quiet"):
+        return True
+    return bool(QUIET.search(_lead(brief.get("summary"))["head"] or ""))
+
+
 def jinja_env() -> Environment:
     env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
                        bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
-                       agenda=_agenda, curve=_curve_svg)
+                       agenda=_agenda, curve=_curve_svg, quiet=_quiet)
     env.globals["tile_slug"] = tile_slug
+    env.tests["quiet"] = _quiet  # for select("quiet") in templates
     return env
 
 

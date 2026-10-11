@@ -166,7 +166,7 @@ def messages(digest: dict, tabs: list[str], mode: str = "important") -> list[dic
         out.append({"title": "☀️ Today's brief", "body": _clip(text), "tag": "today",
                     "url": "./#today", "icon": "icon-192.png"})
     for s in digest["sections"]:
-        if s["id"] not in tabs or not s.get("new_count"):
+        if s["id"] not in tabs or not s.get("new_count") or (s.get("briefing") or {}).get("quiet"):
             continue
         lead = _lead((s.get("briefing") or {}).get("summary"))
         head = lead["head"] if lead["head"] and not lead["head"].lower().startswith("nothing new") else ""

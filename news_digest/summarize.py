@@ -25,6 +25,7 @@ SECTION_SCHEMA = {
         "summary_sources": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
         "for_you": {"type": "array", "items": {"type": "string"}},
         "on_radar": {"type": "array", "items": {"type": "string"}},
+        "quiet": {"type": "boolean"},
         "alert": {
             "type": "object",
             "properties": {"important": {"type": "boolean"}, "headline": {"type": "string"}},
@@ -58,7 +59,7 @@ SECTION_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "summary_sources", "for_you", "on_radar", "alert", "explainer", "article_summaries", "highlights"],
+    "required": ["quiet", "summary", "summary_sources", "for_you", "on_radar", "alert", "explainer", "article_summaries", "highlights"],
     "additionalProperties": False,
 }
 
@@ -250,6 +251,7 @@ Rules:
 - Write in {language}. Articles may be in Dutch - translate as needed.
 - Write like a good newspaper briefing: plain, precise, no filler or hedging boilerplate.
 - "summary": a list of 2-6 bullet points (one string each, markdown allowed, no leading dash) with the most important developments. Start each with a short **bold lead-in** (3-7 words), then at most two short sentences. If nothing meaningful happened, say so in one bullet.
+- "quiet": true when nothing meaningful happened in this section today (only minor, repeated or irrelevant items); the Today page then leaves the section out. Still write the summary.
 - "summary_sources": one list per summary bullet, in the same order: the ids of the articles that bullet is based on (1-5 ids; empty list for a bullet based only on data such as quotes or rates).
 - "for_you": 0-3 concrete takeaways or actions for us, based on the profile, one sentence each (empty list if none).
 - "on_radar": 0-4 upcoming events with a date that the articles or data mention (central bank meetings, data releases, earnings, auctions, regulatory deadlines, conferences), each starting with the date, e.g. "23 Oct: ECB rate decision". Never guess a date; empty list if none.
@@ -362,7 +364,7 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
     has_quotes = any(q.get("price") is not None for q in section.get("quotes") or [])
     has_rates = any(r.get("value") is not None for r in section.get("rates") or [])
     if not new_items and not changed_pages and not has_quotes and not has_rates:
-        return {"summary": "- Nothing new since the last digest.", "summary_refs": [[]], "for_you": [], "on_radar": [],
+        return {"quiet": True, "summary": "- Nothing new since the last digest.", "summary_refs": [[]], "for_you": [], "on_radar": [],
                 "alert": {"important": False, "headline": ""}, "article_summaries": [],
                 "explainer": {"title": "", "text": ""}, "highlights": []}
 
@@ -416,13 +418,14 @@ def section_briefing(client, cfg: dict, section: dict) -> dict | None:
 
 def top_briefing(client, cfg: dict, sections: list[dict]) -> list[dict]:
     summaries = {s["id"]: {"title": s["title"], "summary": s["briefing"]["summary"]}
-                 for s in sections if s.get("briefing")}
+                 for s in sections if s.get("briefing") and not s["briefing"].get("quiet")}
     if not summaries:
         return []
     system = (
         f"You write the 'today in one minute' opener of a private daily brief, in "
         f"{cfg.get('language', 'English')}. Two people read it, each mostly in their own "
-        "sections (see the profile). Pick the 4-6 developments that matter most, "
+        "sections (see the profile). Pick the 4-6 developments that matter most, never a "
+        "'nothing happened' item, "
         "covering both readers when there is something meaningful for each. One "
         "bullet each, plain text, at most two short sentences (about 35 words). Set "
         "`section` to the id of the section the point comes from. Use only the "
