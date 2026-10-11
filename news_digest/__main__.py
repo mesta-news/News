@@ -400,9 +400,54 @@ def _curve_svg(c: dict | None) -> Markup:
     return Markup("".join(out))
 
 
-def _calendar(digests: list[dict], today: str) -> str:
-    """An iCalendar feed of every upcoming 'Coming up' date from recent editions."""
+def _event_uid(e: dict) -> str:
     import hashlib
+    return hashlib.sha1(f"{e['date'].strftime('%Y%m%d')}{e['what']}".encode()).hexdigest()[:16]
+
+
+def _event_title(e: dict) -> str:
+    return f"{e['label']}: {e['what']}" + (f" ({e['time']})" if e["time"] else "")
+
+
+def _gcal_url(e: dict) -> str:
+    """Google Calendar's 'new event' page, filled in (all-day event on that date)."""
+    from urllib.parse import urlencode
+    day = e["date"]
+    return "https://calendar.google.com/calendar/render?" + urlencode({
+        "action": "TEMPLATE", "text": _event_title(e)[:250],
+        "dates": f"{day.strftime('%Y%m%d')}/{(day + timedelta(days=1)).strftime('%Y%m%d')}",
+        "details": "From The Daily Brief", "trp": "false"}, safe="/")
+
+
+def _ics(events: list[dict], name: str = "") -> str:
+    """iCalendar text for all-day events; long lines folded as the standard asks."""
+    esc = lambda t: t.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", " ")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    def fold(line: str) -> list[str]:
+        out, b = [], line.encode()
+        while len(b) > 74:
+            cut = 74
+            while (b[cut] & 0xC0) == 0x80:  # don't split a UTF-8 character
+                cut -= 1
+            out.append(b[:cut].decode())
+            b = b" " + b[cut:]
+        return out + [b.decode()]
+
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Daily Brief//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
+    if name:
+        lines += [f"X-WR-CALNAME:{name}", "X-PUBLISHED-TTL:PT6H", "REFRESH-INTERVAL;VALUE=DURATION:PT6H"]
+    for e in sorted(events, key=lambda e: e["date"]):
+        lines += ["BEGIN:VEVENT", f"UID:{_event_uid(e)}@daily-brief", f"DTSTAMP:{stamp}",
+                  f"DTSTART;VALUE=DATE:{e['date'].strftime('%Y%m%d')}",
+                  f"DTEND;VALUE=DATE:{(e['date'] + timedelta(days=1)).strftime('%Y%m%d')}",
+                  *fold(f"SUMMARY:{esc(_event_title(e))[:250]}"), "TRANSP:TRANSPARENT", "END:VEVENT"]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines) + "\r\n"
+
+
+def _calendar(digests: list[dict], today: str) -> list[dict]:
+    """Every upcoming 'Coming up' date from recent editions."""
     seen, events = set(), []
     for d in digests[:21]:
         for e in _agenda(d, limit=100):
@@ -410,18 +455,7 @@ def _calendar(digests: list[dict], today: str) -> str:
             if e["date"].isoformat() >= today and key not in seen:
                 seen.add(key)
                 events.append(e)
-    esc = lambda t: t.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", " ")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Daily Brief//EN", "CALSCALE:GREGORIAN",
-             "X-WR-CALNAME:The Daily Brief", "X-PUBLISHED-TTL:PT12H", "REFRESH-INTERVAL;VALUE=DURATION:PT12H"]
-    for e in sorted(events, key=lambda e: e["date"]):
-        day = e["date"].strftime("%Y%m%d")
-        uid = hashlib.sha1(f"{day}{e['what']}".encode()).hexdigest()[:16]
-        summary = esc(f"{e['label']}: {e['what']}" + (f" ({e['time']})" if e["time"] else ""))
-        lines += ["BEGIN:VEVENT", f"UID:{uid}@daily-brief", f"DTSTAMP:{stamp}",
-                  f"DTSTART;VALUE=DATE:{day}", f"SUMMARY:{summary[:250]}", "TRANSP:TRANSPARENT", "END:VEVENT"]
-    lines.append("END:VCALENDAR")
-    return "\r\n".join(lines) + "\r\n"
+    return events
 
 
 def tile_slug(sec: str, x: dict) -> str:
@@ -512,7 +546,7 @@ def jinja_env() -> Environment:
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
                        bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
-                       agenda=_agenda, curve=_curve_svg, quiet=_quiet,
+                       agenda=_agenda, curve=_curve_svg, event_uid=_event_uid, gcal=_gcal_url, quiet=_quiet,
                        wx_icon=lambda w: Markup(weather.icon_svg(w)))
     env.globals["tile_slug"] = tile_slug
     env.tests["quiet"] = _quiet  # for select("quiet") in templates
@@ -560,7 +594,11 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
         (out_dir / "edition.json").write_text(json.dumps(
             {"edition": f"{digests[0]['date']} {digests[0]['generated_label']}"}))
     if digests:
-        (out_dir / "calendar.ics").write_text(_calendar(digests, digests[0]["date"]))
+        events = _calendar(digests, digests[0]["date"])
+        (out_dir / "calendar.ics").write_text(_ics(events, "The Daily Brief"))
+        (out_dir / "cal").mkdir(exist_ok=True)  # one file per event, for "add this one"
+        for e in events:
+            (out_dir / "cal" / f"{_event_uid(e)}.ics").write_text(_ics([e]))
     index = json.dumps(_search_index(digests), ensure_ascii=False, separators=(",", ":"))
     (out_dir / "search.json").write_text(lock.lock_json(index, secret) if secret else index)
     (out_dir / "archive.html").write_text(seal(env.get_template("archive.html.j2").render(entries=entries)))

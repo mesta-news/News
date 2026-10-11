@@ -109,6 +109,11 @@
   .agenda ul { list-style: none; margin: 6px 0 0; padding: 0; }
   .agenda li { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; line-height: 1.4; }
   .agenda li:last-child { border-bottom: 0; }
+  .agenda .what { flex: 1; min-width: 0; }
+  .cal-add { flex: none; align-self: flex-start; width: 34px; height: 34px; margin: -4px 0 0; border: 1px solid var(--rule);
+             border-radius: 50%; background: none; color: var(--claret); font: 700 1rem/1 var(--sans); cursor: pointer; }
+  .cal-add.added { border-color: transparent; background: var(--claret); color: var(--paper); }
+  .agenda-hint { margin: 2px 0 0; font-size: .78rem; color: var(--muted); }
   .agenda .when { flex: none; width: 96px; font-weight: 700; color: var(--ink); white-space: nowrap; }
   .agenda .cat { margin-right: 4px; font: 700 .66rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
                  color: var(--cat, var(--teal)); text-decoration: none; }
@@ -497,10 +502,13 @@
     {% if coming %}
     <div class="agenda">
       <div class="kicker-row"><div class="kicker" style="color:var(--claret)">Coming up</div>
-        <button type="button" class="cal-link" id="cal-link">＋ Add to my calendar</button></div>
+        <button type="button" class="cal-link" id="cal-link">Subscribe to all</button></div>
+      <p class="agenda-hint">Tap ＋ to add a date to your calendar.</p>
       <ul>{% for e in coming %}
         <li><span class="when num">{{ e.date.strftime("%a %-d %b") }}{% if e.time %}<br><small>{{ e.time }}</small>{% endif %}</span>
-          <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span></li>
+          <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span>
+          {% set uid = e | event_uid %}<button type="button" class="cal-add" data-uid="{{ uid }}" data-g="{{ e | gcal }}" data-ics="cal/{{ uid }}.ics"
+            aria-label="Add to my calendar: {{ e.what }}">＋</button></li>
       {% endfor %}</ul>
     </div>
     {% endif %}
@@ -788,10 +796,10 @@
 <script type="application/json" id="articles">{{ articles | tojson }}</script>
 
 <dialog class="notify" id="cal-dlg" aria-labelledby="cal-title">
-  <h3 id="cal-title">Add to my calendar</h3>
-  <p>Subscribe once and the dates from <em>Coming up</em> appear in your calendar, and new ones arrive by themselves.</p>
+  <h3 id="cal-title">Subscribe to all dates</h3>
+  <p>Every date from <em>Coming up</em> appears in your calendar, and new ones arrive by themselves. To pick single dates instead, tap ＋ next to a date.</p>
   <div class="presets">
-    <a class="preset" id="cal-google" target="_blank" rel="noopener"><strong>Google Calendar</strong><span>Android, Samsung and the web. Sign in, then tap Add.</span></a>
+    <a class="preset" id="cal-google" target="_blank" rel="noopener"><strong>Google Calendar</strong><span>Android, Samsung and the web. Tap Add. Then on the phone: Google Calendar → Settings → The Daily Brief → turn on <em>Sync</em>. The first dates can take a few hours to appear.</span></a>
     <a class="preset" id="cal-apple"><strong>iPhone / Apple Calendar</strong><span>Opens the Calendar app to subscribe.</span></a>
     <a class="preset" id="cal-file" download="daily-brief.ics"><strong>Download the dates</strong><span>A one-time copy (.ics) for any other calendar app.</span></a>
   </div>

@@ -588,6 +588,21 @@
     $("cal-link")?.addEventListener("click", () => calDlg.showModal());
     $("cal-close")?.addEventListener("click", () => calDlg.close());
     calDlg.addEventListener("click", e => { if (e.target === calDlg) calDlg.close(); });
+    // Single dates: Google Calendar's "new event" page on Android and computers,
+    // the event file on iPhone (Safari offers "Add to Calendar").
+    const isApple = /iPhone|iPad|Macintosh/.test(navigator.userAgent) && "ontouchend" in document;
+    const added = new Set(load("brief-cal-added", []));
+    const markAdded = b => { b.classList.add("added"); b.textContent = "✓"; };
+    document.querySelectorAll(".cal-add").forEach(b => { if (added.has(b.dataset.uid)) markAdded(b); });
+    document.addEventListener("click", e => {
+      const b = e.target.closest(".cal-add");
+      if (!b) return;
+      if (isApple) location.href = new URL(b.dataset.ics, location.href).href;
+      else window.open(b.dataset.g, "_blank", "noopener");
+      added.add(b.dataset.uid);
+      store("brief-cal-added", [...added].slice(-200));
+      markAdded(b);
+    });
     // Put the likely choice for this phone first.
     if (/iPhone|iPad|Macintosh/.test(navigator.userAgent)) $("cal-apple").parentNode.prepend($("cal-apple"));
   }
