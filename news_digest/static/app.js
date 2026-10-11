@@ -308,6 +308,7 @@
     if (next) $("r-next").innerHTML = `Next story<span>${esc(next.t)}</span>`;
     showReader();
     learn(a.t, a.s);
+    markRead(id);
     return true;
   }
 
@@ -481,6 +482,87 @@
   const cal = $("cal-link");
   if (cal) cal.href = new URL("calendar.ics", location.href).href.replace(/^https?:/, "webcal:");
 
+  // ------------------------------------------------------------------ read state
+  // Stories opened on this phone are dimmed; tab counters show unread new stories.
+  const readIds = new Set(load("brief-read", []));
+  function markRead(id) {
+    if (!id || readIds.has(id)) return;
+    readIds.add(id);
+    store("brief-read", [...readIds].slice(-3000));
+    paintRead();
+  }
+  function paintRead() {
+    document.querySelectorAll("li[data-id]").forEach(li => li.classList.toggle("read", readIds.has(li.dataset.id)));
+    document.querySelectorAll(".tabs a[data-tab]").forEach(a => {
+      const count = a.querySelector(".count");
+      const panel = document.getElementById("tab-" + a.dataset.tab);
+      if (!count || !panel) return;
+      const ids = new Set([...panel.querySelectorAll("ul.stories:not(.older) li[data-id]")].map(li => li.dataset.id));
+      const unread = [...ids].filter(id => !readIds.has(id)).length;
+      count.textContent = unread;
+      count.hidden = !unread;
+    });
+  }
+  // Opening a story at its source (long-press, search results) also counts as read.
+  document.addEventListener("click", e => {
+    const a = e.target.closest("li[data-id] a.hl, a[data-article]");
+    if (a) markRead(a.dataset.article || a.closest("li[data-id]")?.dataset.id);
+  }, true);
+
+  // ------------------------------------------------------------------ freshness
+  // "updated 2 h ago", and a banner when a newer edition was published while the app
+  // stayed open in the background (phones resume apps from memory).
+  const edition = document.body.dataset.edition || "";
+  function ago() {
+    const m = edition.match(/^(\d{4}-\d\d-\d\d) (\d\d):(\d\d)/);
+    const el = $("ago");
+    if (!m || !el) return;
+    const mins = Math.round((Date.now() - new Date(`${m[1]}T${m[2]}:${m[3]}:00`)) / 6e4);
+    el.textContent = mins < 1 ? " · just now" : mins < 60 ? ` · ${mins} min ago` : mins < 48 * 60 ? ` · ${Math.round(mins / 60)} h ago` : "";
+  }
+  const isLatest = /(^|\/)(index\.html)?$/.test(location.pathname);
+  async function checkEdition() {
+    if (!isLatest || !navigator.onLine) return;
+    try {
+      const res = await fetch("edition.json", { cache: "no-store" });
+      const latest = (await res.json()).edition;
+      if (latest && edition && latest !== edition) $("new-edition").hidden = false;
+    } catch (e) {}
+  }
+  $("new-edition")?.addEventListener("click", () => location.reload());
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { ago(); checkEdition(); } });
+  setInterval(ago, 60000);
+
+  // ------------------------------------------------------------------ reader swipes
+  // In the reader: swipe left for the next story/point, swipe right to go back.
+  let rx = null, ry = null;
+  reader?.addEventListener("touchstart", e => { rx = e.touches[0].clientX; ry = e.touches[0].clientY; }, { passive: true });
+  reader?.addEventListener("touchend", e => {
+    if (rx === null) return;
+    const dx = e.changedTouches[0].clientX - rx, dy = e.changedTouches[0].clientY - ry;
+    rx = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0 && !$("r-next").hidden) $("r-next").click();
+    if (dx > 0) closeReader();
+  }, { passive: true });
+
+  // ------------------------------------------------------------------ quick setup
+  const setup = $("setup");
+  function openSetup() { setup?.showModal(); }
+  setup?.addEventListener("click", e => {
+    const b = e.target.closest(".preset");
+    if (!b) { if (e.target === setup) setup.close(); return; }
+    const all = [...document.querySelectorAll(".tabs a[data-tab]")].map(a => a.dataset.tab).filter(t => !["today", "week"].includes(t));
+    const keep = b.dataset.preset === "*" ? all : b.dataset.preset.split(" ");
+    const set = load("brief-settings", {});
+    set.hidden = all.filter(t => !keep.includes(t));
+    store("brief-settings", set);
+    store("brief-onboarded", 1);
+    location.reload();
+  });
+  setup?.addEventListener("cancel", () => store("brief-onboarded", 1));
+  $("settings-setup")?.addEventListener("click", () => { $("settings")?.close(); openSetup(); });
+
   // ------------------------------------------------------------------ settings
   // Theme and text size apply at once (and before drawing, see _head.html.j2);
   // tabs, start page, ticker and "For you" apply when Settings closes.
@@ -552,4 +634,9 @@
   syncStars();
   renderSaved();
   rank();
+  paintRead();
+  ago();
+  checkEdition();
+  // First visit on this phone: offer a starting set of tabs.
+  if (!load("brief-onboarded", 0) && !load("brief-settings", null) && isLatest) setTimeout(openSetup, 400);
 })();

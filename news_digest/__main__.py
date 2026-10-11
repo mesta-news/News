@@ -506,6 +506,9 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
         entries.append({"date": d["date"], "label": d["date_label"],
                         "new_count": sum(s.get("new_count", 0) for s in d["sections"])})
     (out_dir / "index.html").write_text(seal(index_html or "<p>No digest yet.</p>"))
+    if digests:  # lets an open app notice that a newer edition exists (only a timestamp)
+        (out_dir / "edition.json").write_text(json.dumps(
+            {"edition": f"{digests[0]['date']} {digests[0]['generated_label']}"}))
     if digests:
         (out_dir / "calendar.ics").write_text(_calendar(digests, digests[0]["date"]))
     index = json.dumps(_search_index(digests), ensure_ascii=False, separators=(",", ":"))

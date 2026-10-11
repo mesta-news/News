@@ -60,6 +60,11 @@ This repo is public, so two optional switches keep your brief private:
   without it the saved history can't be read. The calendar feed and
   notifications are not encrypted.
 
+* **Read state**: stories you opened are dimmed and marked "read"; the number on each tab counts unread new stories.
+* **Freshness**: the dateline says how long ago the edition was made, and a "new edition is ready" banner appears when a newer one was published while the app was open.
+* **Quick setup**: on first open each phone picks a starting set of tabs (Health & careers, Finance, tech & games, or Everything); it is also under Settings.
+* Tap the active tab to jump back to the top; in the reader, swipe left for the next story and right to go back.
+
 ## Settings
 
 The ⚙️ icon opens per-phone settings: theme (System, Light, Dark), text size,

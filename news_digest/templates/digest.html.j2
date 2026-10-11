@@ -259,6 +259,20 @@
   .curve-box .legend .l-y1 { border-top: 2px dashed var(--faint); }
   svg.curve { display: block; width: 100%; height: auto; margin-top: 6px; }
 
+  /* Read state, quick setup, new-edition banner */
+  li[data-id].read a.hl, li[data-id].read .snippet, li[data-id].read .why { color: var(--muted); }
+  li[data-id].read .src::after { content: " · read"; color: var(--faint); font-weight: 600; letter-spacing: 0; text-transform: none; }
+  #ago { font-weight: 500; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .presets { display: grid; gap: 10px; margin-top: 14px; }
+  .preset { display: grid; gap: 3px; padding: 14px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper);
+            color: var(--ink); text-align: left; cursor: pointer; font: 400 .82rem/1.35 var(--sans); }
+  .preset strong { font-size: 1rem; }
+  .preset span { color: var(--muted); }
+  .preset:active { background: var(--panel); }
+  .new-edition { position: fixed; left: 50%; bottom: calc(16px + var(--safe-bottom)); z-index: 30; transform: translateX(-50%);
+                 padding: 12px 18px; border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
+                 font: 500 .9rem var(--sans); box-shadow: 0 6px 24px rgba(0,0,0,.3); cursor: pointer; white-space: nowrap; }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
              padding: 10px 0; border-bottom: 1px solid var(--rule); }
@@ -345,7 +359,7 @@
     <nav class="tabs" aria-label="Sections">
       <a href="#today" data-tab="today">Today</a>
       {% if d.weekly %}<a href="#week" data-tab="week">This week</a>{% endif %}
-      {% for s in d.sections %}<a href="#{{ s.id }}" data-tab="{{ s.id }}" data-cat="{{ s.id }}">{{ s.short or s.title }}{% if s.new_count %}<span class="count num">{{ s.new_count }}</span>{% endif %}</a>{% endfor %}
+      {% for s in d.sections %}<a href="#{{ s.id }}" data-tab="{{ s.id }}" data-cat="{{ s.id }}">{{ s.short or s.title }}<span class="count num"{% if not s.new_count %} hidden{% endif %}>{{ s.new_count }}</span></a>{% endfor %}
     </nav>
   </div>
 </header>
@@ -366,7 +380,7 @@
 <main class="wrap">
 
   <article class="panel" id="tab-today" data-panel="today">
-    <div class="dateline"><span>{{ d.date_label }}</span><span>Edition {{ d.generated_label }}</span></div>
+    <div class="dateline"><span>{{ d.date_label }}</span><span>Edition {{ d.generated_label }}<span id="ago"></span></span></div>
     <h1 class="front-title">Today's brief</h1>
     <div class="meta">{{ d.sections | sum(attribute="new_count") }} new stories across {{ d.sections | length }} sections</div>
     {% set mad = [] %}{% for s in d.sections %}{% for q in s.quotes or [] if q.symbol == "EURMAD=X" and q.price %}{% set _ = mad.append(q) %}{% endfor %}{% endfor %}
@@ -627,6 +641,21 @@
   </footer>
 </main>
 
+<dialog class="notify" id="setup" aria-labelledby="setup-title">
+  <h3 id="setup-title">What do you read?</h3>
+  <p>Pick a starting set of tabs for this phone. You can change it any time in Settings ⚙️.</p>
+  <div class="presets">
+    <button type="button" class="preset" data-preset="careers research medicine world technology">
+      <strong>🩺 Health &amp; careers</strong><span>Careers, Clinical research, Medicine, World, Technology</span></button>
+    <button type="button" class="preset" data-preset="banking rates watchlist energy business ai technology gaming world">
+      <strong>📈 Finance, tech &amp; games</strong><span>Banking, Rates, Markets, Energy, Business, AI, Technology, Gaming, World</span></button>
+    <button type="button" class="preset" data-preset="*">
+      <strong>🗞️ Everything</strong><span>All tabs</span></button>
+  </div>
+</dialog>
+
+<button class="new-edition" id="new-edition" type="button" hidden>A new edition is ready · <strong>Refresh</strong></button>
+
 <dialog class="notify settings" id="settings" aria-labelledby="settings-title">
   <h3 id="settings-title">Settings</h3>
   <p>Saved on this phone only.</p>
@@ -657,6 +686,7 @@
   </div>
   <div class="row">
     <button class="btn" type="button" id="settings-done">Done</button>
+    <button class="btn ghost" type="button" id="settings-setup">Quick setup…</button>
     {% if vapid_public_key %}<button class="btn ghost" type="button" id="settings-notify">Notifications…</button>{% endif %}
     <button class="btn ghost" type="button" onclick="location.reload()">Reload</button>
   </div>
@@ -886,6 +916,8 @@
       const a = e.target.closest("a[data-tab]");
       if (!a) return;
       e.preventDefault();
+      // Tapping the tab you're already on scrolls back to the top, as in most apps.
+      if (a.dataset.tab === current && !a.dataset.focus) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
       show(a.dataset.tab, { focus: a.dataset.focus });
     });
 
