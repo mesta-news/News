@@ -322,17 +322,29 @@
   // appearing on the one now open.
   let imgToken = 0;
   function setPicture(a) {
-    const img = $("r-img"), illu = $("r-illu"), token = ++imgToken;
+    // The article's own photo when it has one (no placeholder otherwise), and the
+    // publisher's site icon next to its name. The token stops a slow photo from an
+    // earlier story appearing on the one now open.
+    const img = $("r-img"), token = ++imgToken;
     img.hidden = true;
     img.onload = img.onerror = null;
     img.removeAttribute("src");
-    $("r-illu-emoji").textContent = (ART._emoji || {})[a.sec] || "📰";
-    $("r-illu-src").textContent = a.s || "";
-    illu.hidden = false;
+    setFavicon(a.l);
     if (!a.img) return;
-    img.onload = () => { if (token === imgToken) { img.hidden = false; illu.hidden = true; } };
-    img.onerror = () => { if (token === imgToken) { img.hidden = true; illu.hidden = false; } };
+    img.onload = () => { if (token === imgToken) img.hidden = false; };
+    img.onerror = () => { if (token === imgToken) img.hidden = true; };
     img.src = a.img;
+  }
+
+  function setFavicon(url) {
+    const fav = $("r-fav"), h = host(url);
+    fav.hidden = true;
+    fav.onload = fav.onerror = null;
+    fav.removeAttribute("src");
+    if (!h || h.endsWith("news.google.com")) return;
+    fav.onload = () => { fav.hidden = fav.naturalWidth < 8; };  // Google answers unknown sites with a tiny globe
+    fav.onerror = () => { fav.hidden = true; };
+    fav.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64`;
   }
 
   function openReader(id, list) {
@@ -410,7 +422,7 @@
     ++imgToken;  // a picture still loading for an earlier story must not appear here
     $("r-img").hidden = true;
     $("r-img").removeAttribute("src");
-    $("r-illu").hidden = true;
+    $("r-fav").hidden = true;
     // Show the real photo of one of the articles behind this point, if any has one.
     const photoId = related(t.sec, t.text, t.refs).ids.find(id => ART[id] && ART[id].img);
     if (photoId) {
@@ -521,7 +533,7 @@
   let speaking = null;
   function stopSpeaking() {
     speechSynthesis.cancel();
-    document.querySelectorAll(".listen.playing").forEach(b => { b.classList.remove("playing"); b.textContent = "▶ Listen"; });
+    document.querySelectorAll(".listen.playing").forEach(b => { b.classList.remove("playing"); b.textContent = "▶︎ Listen"; });
     document.querySelectorAll(".speaking").forEach(el => el.classList.remove("speaking"));
     speaking = null;
   }
@@ -539,7 +551,7 @@
     const voice = voices.find(v => /en-GB/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang));
     speaking = btn;
     btn.classList.add("playing");
-    btn.textContent = "■ Stop";
+    btn.textContent = "■︎ Stop";
     parts.forEach((el, i) => {
       const u = new SpeechSynthesisUtterance(el.textContent.replace(/\s+/g, " ").trim());
       if (voice) u.voice = voice;
