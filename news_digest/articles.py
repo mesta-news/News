@@ -13,6 +13,7 @@ import base64
 import json
 import logging
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin
 
@@ -22,7 +23,7 @@ from bs4 import BeautifulSoup
 log = logging.getLogger(__name__)
 
 TIMEOUT = 12
-TEXT_LIMIT = 3500  # characters of article text handed to Claude (enough for key points)
+TEXT_LIMIT = 2500  # characters of article text handed to Claude per article (enough for key points)
 HEADERS = {
     # A normal browser user agent: many news sites refuse unknown clients.
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
@@ -68,8 +69,31 @@ def resolve(url: str, session: requests.Session) -> str:
         return url
 
 
-def extract(html: str, base_url: str) -> tuple[str, str]:
-    """(main text, preview image URL) from an article page."""
+def _jsonld_text(soup) -> tuple[str, str]:
+    """(articleBody, description) from the page's JSON-LD. Many paywalled sites still
+    publish the article text or a good description here for search engines."""
+    body = desc = ""
+    for tag in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(tag.string or "")
+        except (ValueError, TypeError):
+            continue
+        stack = data if isinstance(data, list) else [data]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, list):
+                stack.extend(node)
+            elif isinstance(node, dict):
+                stack.extend(v for k, v in node.items() if k == "@graph")
+                if isinstance(node.get("articleBody"), str) and len(node["articleBody"]) > len(body):
+                    body = node["articleBody"]
+                if isinstance(node.get("description"), str) and len(node["description"]) > len(desc):
+                    desc = node["description"]
+    return " ".join(body.split()), " ".join(desc.split())
+
+
+def extract(html: str, base_url: str) -> tuple[str, str, str]:
+    """(main text, preview image URL, description) from an article page."""
     soup = BeautifulSoup(html, "html.parser")
     image = ""
     for attrs in ({"property": "og:image"}, {"name": "twitter:image"}):
@@ -77,6 +101,12 @@ def extract(html: str, base_url: str) -> tuple[str, str]:
         if tag and tag.get("content", "").strip():
             image = urljoin(base_url, tag["content"].strip())
             break
+    ld_body, ld_desc = _jsonld_text(soup)
+    desc = ld_desc
+    for attrs in ({"property": "og:description"}, {"name": "description"}, {"name": "twitter:description"}):
+        tag = soup.find("meta", attrs=attrs)
+        if tag and len(tag.get("content", "").strip()) > len(desc):
+            desc = " ".join(tag["content"].split())
     for tag in soup(["script", "style", "noscript", "nav", "header", "footer", "aside", "form", "figure"]):
         tag.decompose()
     root = soup.find("article") or soup.find("main") or soup.body or soup
@@ -89,35 +119,81 @@ def extract(html: str, base_url: str) -> tuple[str, str]:
         total += len(p)
         if total >= TEXT_LIMIT:
             break
-    return " ".join(text)[:TEXT_LIMIT], image if image.startswith("https://") else ""
+    body = " ".join(text)
+    if len(ld_body) > len(body):  # the page body was cut (paywall, script-rendered) but JSON-LD has it
+        body = ld_body
+    return body[:TEXT_LIMIT], image if image.startswith("https://") else "", desc[:600]
+
+
+STATS: dict[str, int] = {}
+_stats_lock = threading.Lock()
+
+
+def _count(outcome: str) -> None:
+    with _stats_lock:
+        STATS[outcome] = STATS.get(outcome, 0) + 1
+
+
+def _read(url: str, session: requests.Session) -> tuple[str, str, str, str]:
+    """(final url, text, image, description) for one link; empty strings when unreadable."""
+    final = resolve(url, session)
+    if "news.google.com" in final:
+        return final, "", "", ""
+    resp = session.get(final, timeout=TIMEOUT)
+    if not resp.ok or "html" not in resp.headers.get("Content-Type", "html"):
+        return final, "", "", ""
+    text, image, desc = extract(resp.text, resp.url)
+    return resp.url or final, text, image, desc
 
 
 def _fetch(item: dict) -> None:
+    """Read an article; if its page gives nothing usable, try the other outlets that
+    carried the same story. Keeps the best text, the first picture and description."""
+    links = [item["link"]] + [l for l in item.get("alt") or [] if l != item["link"]][:3]
+    best_desc = ""
     with requests.Session() as session:
         session.headers.update(HEADERS)
-        try:
-            url = resolve(item["link"], session)
-            if url != item["link"]:
-                item["url"] = url  # the publisher's own link, used by "Read at source"
-            resp = session.get(url, timeout=TIMEOUT)
-            if resp.ok and "html" in resp.headers.get("Content-Type", "html"):
-                text, image = extract(resp.text, resp.url)
-                if len(text) >= 200:
-                    item["_text"] = text  # input for Claude only; removed before saving
-                if image:
-                    item["image"] = image
-        except requests.RequestException as exc:
-            log.debug("article %s: %s", item["link"], exc)
+        for n, link in enumerate(links):
+            try:
+                final, text, image, desc = _read(link, session)
+            except requests.RequestException as exc:
+                log.debug("article %s: %s", link, exc)
+                continue
+            if n == 0 and final != item["link"] and "news.google.com" not in final:
+                item["url"] = final  # the publisher's own link, used by "Read at source"
+            if image and not item.get("image"):
+                item["image"] = image
+            best_desc = desc if len(desc) > len(best_desc) else best_desc
+            if len(text) >= 200:
+                item["_text"] = text  # input for Claude only; removed before saving
+                _count("full text" if n == 0 else "full text from another outlet")
+                return
+    if len(best_desc) >= 100:
+        item["_text"] = best_desc  # only the publisher's description: Claude writes a shorter piece
+        item["_thin"] = True
+        _count("description only")
+    else:
+        _count("nothing readable")
 
 
-def enrich(sections: list[dict], per_section: int = 8) -> None:
-    """Fetch the top new articles of every section in parallel (adds url, image, _text)."""
+def enrich(sections: list[dict], per_section: int = 20, budget_s: int = 240) -> None:
+    """Fetch every new article shown in each tab in parallel (adds url, image, _text).
+    Stops starting new fetches after `budget_s` so a slow morning can't stall the run."""
+    import time
+    STATS.clear()
     todo = [i for s in sections for i in [x for x in s["items"] if x["is_new"]][:per_section]]
-    with ThreadPoolExecutor(max_workers=10) as pool:
-        list(pool.map(_fetch, todo))
+    start = time.monotonic()
+
+    def task(item):
+        if time.monotonic() - start < budget_s:
+            _fetch(item)
+        else:
+            _count("skipped (time budget)")
+
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        list(pool.map(task, todo))
     drop_generic_images(todo)
-    got = sum(1 for i in todo if i.get("_text"))
-    log.info("articles: read %d of %d shown articles", got, len(todo))
+    log.info("articles: %d shown; %s", len(todo), ", ".join(f"{k}: {v}" for k, v in sorted(STATS.items())))
 
 
 GENERIC = re.compile(r"logo|default|placeholder|fallback|favicon|icon|share[-_]?image|og[-_]?image|brand", re.I)
