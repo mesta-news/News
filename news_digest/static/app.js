@@ -648,6 +648,98 @@
   setup?.addEventListener("cancel", () => store("brief-onboarded", 1));
   $("settings-setup")?.addEventListener("click", () => { $("settings")?.close(); openSetup(); });
 
+  // ------------------------------------------------------------------ weather
+  // Tap the weather card for a live forecast (Open-Meteo, fetched on the phone so it's
+  // current rather than from the morning run).
+  const WX = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Fog", 51: "Light drizzle",
+    53: "Drizzle", 55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle", 61: "Light rain", 63: "Rain", 65: "Heavy rain",
+    66: "Freezing rain", 67: "Freezing rain", 71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Showers",
+    81: "Showers", 82: "Heavy showers", 85: "Snow showers", 86: "Snow showers", 95: "Thunderstorms", 96: "Thunderstorms", 99: "Thunderstorms" };
+  const kind = c => c <= 1 ? "sun" : c === 2 ? "part" : c === 3 ? "cloud" : c <= 48 ? "fog" : c >= 95 ? "storm"
+    : (c >= 71 && c <= 77) || c === 85 || c === 86 ? "snow" : "rain";
+  // Simple line icons (no emoji), drawn in the current text colour.
+  const ICON = {
+    sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+    part: '<path d="M8 4v1.5M3.5 8.5H5M4.8 4.8l1 1M12.2 4.8l-1 1"/><path d="M5.6 10.6A3.5 3.5 0 1 1 11.6 7"/><path d="M8 20h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 2A3 3 0 0 0 8 20z"/>',
+    cloud: '<path d="M7 19h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6 11.5 3.8 3.8 0 0 0 7 19z"/>',
+    fog: '<path d="M7 13h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 6.8 3.2 3.2 0 0 0 7 13z"/><path d="M4 17h16M6 20.5h12"/>',
+    rain: '<path d="M7 15h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 8.8 3.2 3.2 0 0 0 7 15z"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5"/>',
+    snow: '<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.8 3.2 3.2 0 0 0 7 14z"/><path d="M8.5 18.5h.01M12 20.5h.01M15.5 18.5h.01"/>',
+    storm: '<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.8 3.2 3.2 0 0 0 7 14z"/><path d="M12.5 15l-2.5 4h3.5l-2 4"/>',
+  };
+  const icon = c => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[kind(c)]}</svg>`;
+  const wxDlg = $("wx-dlg"), wxBtn = $("wx-open");
+
+  function hoursSvg(h, from) {
+    const n = 24, temps = h.temperature_2m.slice(from, from + n), rain = h.precipitation_probability.slice(from, from + n);
+    const times = h.time.slice(from, from + n);
+    if (temps.length < 2) return "";
+    // Drawn at roughly the size it is shown, so the labels stay readable on a phone.
+    const W = 360, H = 130, T = 20, B = 18, R = 28, lo = Math.min(...temps) - 1, hi = Math.max(...temps) + 1;
+    const x = i => 12 + i / (temps.length - 1) * (W - 24), y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B - R - 6);
+    let out = "";
+    rain.forEach((r, i) => { if (r > 0) { const bh = r / 100 * R; out += `<rect x="${(x(i) - 4.5).toFixed(1)}" y="${(H - B - bh).toFixed(1)}" width="9" height="${bh.toFixed(1)}" rx="1.5" fill="var(--teal)" opacity=".55"/>`; } });
+    out += `<polyline fill="none" stroke="var(--claret)" stroke-width="2.2" stroke-linejoin="round" points="${temps.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}"/>`;
+    temps.forEach((v, i) => { if (i % 3 === 0) out +=
+      `<text x="${x(i).toFixed(1)}" y="${(y(v) - 6).toFixed(1)}" font-size="11" font-weight="600" text-anchor="middle" fill="var(--ink)">${Math.round(v)}°</text>` +
+      `<text x="${x(i).toFixed(1)}" y="${H - 4}" font-size="10" text-anchor="middle" fill="var(--muted)">${times[i].slice(11, 13)}h</text>`; });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Temperature and chance of rain, next 24 hours">${out}</svg>`;
+  }
+
+  function rainSoon(m) {
+    if (!m || !m.precipitation) return "";
+    const now = Date.now(), next = m.time.map((t, i) => [new Date(t), m.precipitation[i]]).filter(([t]) => t >= now - 9e5).slice(0, 8);
+    const first = next.find(([, p]) => p > 0.05);
+    if (!first) return "No rain expected in the next 2 hours.";
+    const mins = Math.max(0, Math.round((first[0] - now) / 6e4));
+    const total = next.reduce((s, [, p]) => s + p, 0);
+    return (mins < 10 ? "Rain now" : `Rain from about ${first[0].toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`)
+      + ` · about ${total.toFixed(1)} mm in the next 2 hours.`;
+  }
+
+  async function openWeather() {
+    if (!wxDlg || !wxBtn) return;
+    $("wx-place").textContent = wxBtn.dataset.place || "Weather";
+    wxDlg.showModal();
+    const { lat, lon } = wxBtn.dataset;
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=Europe%2FAmsterdam&forecast_days=7`
+        + "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m"
+        + "&hourly=temperature_2m,precipitation_probability,weather_code&minutely_15=precipitation"
+        + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max";
+      const w = await (await fetch(url)).json();
+      const c = w.current, d = w.daily, h = w.hourly;
+      const from = Math.max(0, h.time.findIndex(t => t >= c.time.slice(0, 13)));
+      const lo = Math.min(...d.temperature_2m_min), hi = Math.max(...d.temperature_2m_max);
+      const day = (t, i) => i === 0 ? "Today" : new Date(t + "T12:00").toLocaleDateString("en-GB", { weekday: "short" });
+      $("wx-title").textContent = WX[c.weather_code] || "Weather";
+      $("wx-body").innerHTML = `
+        <div class="wx-now">${icon(c.weather_code)}<span class="t num">${Math.round(c.temperature_2m)}°</span>
+          <span class="d"><strong>Feels like ${Math.round(c.apparent_temperature)}°</strong>Today ${Math.round(d.temperature_2m_min[0])}° to ${Math.round(d.temperature_2m_max[0])}°</span></div>
+        <div class="wx-rain">${esc(rainSoon(w.minutely_15))}</div>
+        <div class="kicker wx-sec">Next 24 hours</div><div class="wx-hours">${hoursSvg(h, from)}</div>
+        <div class="meta">Line: temperature · bars: chance of rain</div>
+        <div class="kicker wx-sec">7 days</div>
+        <ul class="wx-days">${d.time.map((t, i) => {
+          const a = (d.temperature_2m_min[i] - lo) / ((hi - lo) || 1) * 100, b = (d.temperature_2m_max[i] - lo) / ((hi - lo) || 1) * 100;
+          return `<li><span>${day(t, i)}</span>${icon(d.weather_code[i])}<span>${esc(WX[d.weather_code[i]] || "")}</span>
+            <span class="rain">${d.precipitation_probability_max[i] ?? 0}%</span>
+            <span class="wx-range num"><span>${Math.round(d.temperature_2m_min[i])}°</span><span class="trk"><i style="left:${a.toFixed(0)}%;right:${(100 - b).toFixed(0)}%"></i></span><span>${Math.round(d.temperature_2m_max[i])}°</span></span></li>`; }).join("")}</ul>
+        <div class="wx-extra">
+          <div><b>${Math.round(c.wind_speed_10m)} km/h</b>Wind, gusts ${Math.round(c.wind_gusts_10m)}</div>
+          <div><b>${c.relative_humidity_2m}%</b>Humidity</div>
+          <div><b>${d.sunrise[0].slice(11)} · ${d.sunset[0].slice(11)}</b>Sunrise · sunset</div>
+          <div><b>${Math.round(d.uv_index_max[0] ?? 0)}</b>UV index</div>
+        </div>`;
+      $("wx-updated").textContent = `Updated ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+    } catch (e) {
+      $("wx-body").innerHTML = `<p class="meta">Couldn't load the live forecast${navigator.onLine ? "" : " (you're offline)"}. This morning: ${esc(wxBtn.querySelector("span:nth-child(2)")?.textContent || "")}.</p>`;
+    }
+  }
+  wxBtn?.addEventListener("click", openWeather);
+  $("wx-close")?.addEventListener("click", () => wxDlg.close());
+  wxDlg?.addEventListener("click", e => { if (e.target === wxDlg) wxDlg.close(); });
+
   // ------------------------------------------------------------------ settings
   // Theme and text size apply at once (and before drawing, see _head.html.j2);
   // tabs, start page, ticker and "For you" apply when Settings closes.

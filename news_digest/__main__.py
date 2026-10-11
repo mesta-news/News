@@ -500,6 +500,7 @@ def render_site(data_dir: Path, out_dir: Path, cfg: dict | None = None) -> str:
     (out_dir / "badge-72.png").write_bytes(icons.badge_png())
     key = push.private_key()
     env.globals["vapid_public_key"] = push.public_key_b64(key) if key else ""
+    env.globals["location"] = (cfg or {}).get("location") or {}
     # With SITE_PASSPHRASE set, pages and the search index are published encrypted (see lock.py).
     secret = lock.passphrase()
     seal = (lambda html: lock.lock_html(html, secret)) if secret else (lambda html: html)
