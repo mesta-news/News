@@ -231,11 +231,8 @@
   #r-sec { color: var(--cat, var(--teal)); }
   #r-img { display: block; width: 100%; max-height: 300px; object-fit: cover; margin: 16px 0 4px; border-radius: 6px; background: var(--panel); }
   .r-block { margin: 18px 0 0; }
-  .r-illu { display: flex; align-items: center; gap: 12px; height: 72px; margin: 14px 0 4px; padding: 0 16px;
-            border-radius: 10px; color: #fff;
-            background: linear-gradient(120deg, var(--cat, var(--claret)), color-mix(in srgb, var(--cat, var(--claret)) 55%, #000)); }
-  #r-illu-emoji { font-size: 2.2rem; line-height: 1; }
-  #r-illu-src { position: relative; font: 700 .72rem/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
+  .r-meta { display: flex; align-items: center; gap: 8px; }
+  .fav { width: 18px; height: 18px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
   .r-kp { margin: 6px 0 0; padding-left: 20px; }
   .r-kp li { margin: 0 0 8px; font: 400 1rem/1.5 var(--serif); }
   .r-also { margin: 16px 0 0; }
@@ -402,7 +399,7 @@
     {% set mad = [] %}{% for s in d.sections %}{% for q in s.quotes or [] if q.symbol == "EURMAD=X" and q.price %}{% set _ = mad.append(q) %}{% endfor %}{% endfor %}
     {% if d.weather or mad %}
     <div class="essentials">
-      {% if d.weather %}{% set w = d.weather %}<div class="ess"><span class="ess-big">{{ w.emoji }} {{ w.max }}°</span>
+      {% if d.weather %}{% set w = d.weather %}<div class="ess"><span class="ess-big">{{ w.max }}°</span>
         <span>{{ w.place }} · {{ w.text }} · low {{ w.min }}°{% if w.rain is not none %} · rain {{ w.rain }}%{% endif %} · wind {{ w.wind }} km/h</span></div>{% endif %}
       {% if mad %}{% set q = mad[0] %}<a class="ess" href="#world" data-tab="world" data-focus="{{ tile_slug('world', q) }}"><span class="ess-big num">{{ "%.2f" | format(q.price) }}</span>
         <span>dirham per euro{% if q.d1 is not none %} · <span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span> today{% endif %}</span></a>{% endif %}
@@ -414,7 +411,7 @@
     {% if d.top %}
     <div class="minute">
       <div class="kicker-row"><div class="kicker" style="color:var(--claret)">In one minute</div>
-        <button class="listen" type="button" data-listen=".minute" aria-label="Listen to the brief">▶ Listen</button></div>
+        <button class="listen" type="button" data-listen=".minute" aria-label="Listen to the brief">▶︎ Listen</button></div>
       <ol>
         {% for b in d.top %}
         {% if b is mapping %}
@@ -474,7 +471,7 @@
     {% endif %}
     {% for s in d.sections if d.weekly.tabs[s.id] %}
     <section class="week-tab" data-cat="{{ s.id }}">
-      <div class="kicker"><a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.emoji }} {{ s.short or s.title }}</a></div>
+      <div class="kicker"><a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.short or s.title }}</a></div>
       <div class="brief">{{ ("- " ~ d.weekly.tabs[s.id] | join("\n- ")) | md }}</div>
     </section>
     {% endfor %}
@@ -570,7 +567,7 @@
     {% endif %}
 
     {% if s.briefing %}
-    {% if s.briefing.summary %}<button class="listen" type="button" data-listen="#tab-{{ s.id }} .brief" aria-label="Listen to this briefing">▶ Listen</button>{% endif %}
+    {% if s.briefing.summary %}<button class="listen" type="button" data-listen="#tab-{{ s.id }} .brief" aria-label="Listen to this briefing">▶︎ Listen</button>{% endif %}
     <div class="brief">{{ s.briefing.summary | md }}</div>
     {% if s.briefing.on_radar %}
     <div class="radar">
@@ -662,11 +659,11 @@
   <p>Pick a starting set of tabs for this phone. You can change it any time in Settings ⚙️.</p>
   <div class="presets">
     <button type="button" class="preset" data-preset="careers research medicine world technology">
-      <strong>🩺 Health &amp; careers</strong><span>Careers, Clinical research, Medicine, World, Technology</span></button>
+      <strong>Health &amp; careers</strong><span>Careers, Clinical research, Medicine, World, Technology</span></button>
     <button type="button" class="preset" data-preset="banking rates watchlist energy business ai technology gaming world">
-      <strong>📈 Finance, tech &amp; games</strong><span>Banking, Rates, Markets, Energy, Business, AI, Technology, Gaming, World</span></button>
+      <strong>Finance, tech &amp; games</strong><span>Banking, Rates, Markets, Energy, Business, AI, Technology, Gaming, World</span></button>
     <button type="button" class="preset" data-preset="*">
-      <strong>🗞️ Everything</strong><span>All tabs</span></button>
+      <strong>Everything</strong><span>All tabs</span></button>
   </div>
 </dialog>
 
@@ -697,7 +694,7 @@
   <label class="set-toggle"><span>"For you": move stories like the ones I open to the top</span><input type="checkbox" id="set-foryou"></label>
   <div class="set-label" style="margin-top:14px">Tabs to show</div>
   <div class="choices" id="set-tabs">
-    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.emoji }} {{ s.short or s.title }}</span></label>
+    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.short or s.title }}</span></label>
     {% endfor %}
   </div>
   <div class="row">
@@ -721,9 +718,8 @@
   <div class="reader-body">
     <div class="kicker" id="r-sec"></div>
     <h2 id="r-title"></h2>
-    <div class="meta" id="r-meta"></div>
+    <div class="meta r-meta"><img class="fav" id="r-fav" alt="" hidden referrerpolicy="no-referrer"><span id="r-meta"></span></div>
     <img id="r-img" alt="" hidden referrerpolicy="no-referrer">
-    <div class="r-illu" id="r-illu" hidden aria-hidden="true"><span id="r-illu-emoji"></span><span id="r-illu-src"></span></div>
     <section class="r-block" id="r-sum-box"><div class="kicker" id="r-sum-k">Summary</div><p id="r-sum"></p>
       <p class="meta" id="r-sum-foot">Written by Claude from the article. Check the source for details.</p></section>
     <section class="r-block" id="r-kp-box" hidden><div class="kicker">Key points</div><ul class="r-kp" id="r-kp"></ul></section>
@@ -755,8 +751,8 @@
   <p>Choose your tabs and how often you want to hear from them.</p>
   <p class="ios-hint" hidden><strong>On iPhone:</strong> first tap Share → <em>Add to Home Screen</em>, open the Brief from your home screen, then tap the bell again.</p>
   <div class="choices">
-    <label class="choice"><input type="checkbox" value="today"><span class="dot"></span><span>☀️ Today</span></label>
-    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.emoji }} {{ s.short or s.title }}</span></label>
+    <label class="choice"><input type="checkbox" value="today"><span class="dot"></span><span>Today</span></label>
+    {% for s in d.sections %}<label class="choice" data-cat="{{ s.id }}"><input type="checkbox" value="{{ s.id }}"><span class="dot"></span><span>{{ s.short or s.title }}</span></label>
     {% endfor %}
   </div>
   <div class="modes">
