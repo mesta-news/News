@@ -286,6 +286,33 @@
                  padding: 12px 18px; border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
                  font: 500 .9rem var(--sans); box-shadow: 0 6px 24px rgba(0,0,0,.3); cursor: pointer; white-space: nowrap; }
 
+  /* Weather */
+  .ess-btn { font: inherit; text-align: left; cursor: pointer; }
+  .ess-btn:active { background: var(--panel); }
+  .ess-more { margin-top: 2px; font: 700 .7rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--claret); }
+  dialog.wx-dlg { max-height: calc(100dvh - 24px); overflow: auto; }
+  .wx-now { display: flex; align-items: center; gap: 14px; margin: 10px 0 4px; }
+  .wx-now .t { font: 700 3rem/1 var(--sans); letter-spacing: -.02em; }
+  .wx-now svg { width: 52px; height: 52px; flex: none; color: var(--ink-2); }
+  .wx-now .d { font-size: .9rem; color: var(--ink-2); }
+  .wx-now .d strong { display: block; font-size: 1.05rem; color: var(--ink); }
+  .wx-rain { margin: 10px 0; padding: 10px 12px; border-radius: 10px; background: var(--panel); font-size: .9rem; }
+  .wx-sec { margin: 16px 0 6px; }
+  .wx-hours svg { display: block; width: 100%; height: auto; }
+  .wx-days { list-style: none; margin: 0; padding: 0; }
+  .wx-days li { display: grid; grid-template-columns: 46px 24px minmax(0, 1fr) 36px 112px; align-items: center; gap: 6px;
+                padding: 8px 0; border-top: 1px solid var(--rule); font-size: .86rem; }
+  .wx-days li > span:nth-child(3) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wx-days li svg { width: 22px; height: 22px; color: var(--ink-2); }
+  .wx-days .rain { color: var(--teal); font-size: .78rem; text-align: right; }
+  .wx-range { display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .wx-range > span:last-child { text-align: right; }
+  .wx-range .trk { position: relative; height: 4px; border-radius: 2px; background: var(--rule); }
+  .wx-range .trk i { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--teal), var(--claret)); }
+  .wx-extra { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; font-size: .82rem; color: var(--ink-2); }
+  .wx-extra div { padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; }
+  .wx-extra b { display: block; font-size: 1rem; color: var(--ink); }
+
   /* Settings */
   .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
              padding: 10px 0; border-bottom: 1px solid var(--rule); }
@@ -399,8 +426,10 @@
     {% set mad = [] %}{% for s in d.sections %}{% for q in s.quotes or [] if q.symbol == "EURMAD=X" and q.price %}{% set _ = mad.append(q) %}{% endfor %}{% endfor %}
     {% if d.weather or mad %}
     <div class="essentials">
-      {% if d.weather %}{% set w = d.weather %}<div class="ess"><span class="ess-big">{{ w.max }}°</span>
-        <span>{{ w.place }} · {{ w.text }} · low {{ w.min }}°{% if w.rain is not none %} · rain {{ w.rain }}%{% endif %} · wind {{ w.wind }} km/h</span></div>{% endif %}
+      {% if d.weather %}{% set w = d.weather %}<button type="button" class="ess ess-btn" id="wx-open" data-lat="{{ location.lat }}" data-lon="{{ location.lon }}" data-place="{{ w.place }}">
+        <span class="ess-big">{{ w.max }}°</span>
+        <span>{{ w.place }} · {{ w.text }} · low {{ w.min }}°{% if w.rain is not none %} · rain {{ w.rain }}%{% endif %} · wind {{ w.wind }} km/h</span>
+        <span class="ess-more">Forecast ›</span></button>{% endif %}
       {% if mad %}{% set q = mad[0] %}<a class="ess" href="#world" data-tab="world" data-focus="{{ tile_slug('world', q) }}"><span class="ess-big num">{{ "%.2f" | format(q.price) }}</span>
         <span>dirham per euro{% if q.d1 is not none %} · <span class="{{ q.d1 | updown }}">{{ q.d1 | pct(2) }}</span> today{% endif %}</span></a>{% endif %}
     </div>
@@ -735,6 +764,13 @@
   </div>
 </dialog>
 <script type="application/json" id="articles">{{ articles | tojson }}</script>
+
+<dialog class="chart-dlg wx-dlg" id="wx-dlg" aria-labelledby="wx-title">
+  <div class="chart-head"><div><div class="kicker" id="wx-place"></div><h3 id="wx-title">Weather</h3></div>
+    <button class="icon-btn" type="button" id="wx-close" aria-label="Close">✕</button></div>
+  <div id="wx-body"><p class="meta">Loading the latest forecast…</p></div>
+  <div class="chart-foot meta"><span id="wx-updated"></span><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo ↗</a></div>
+</dialog>
 
 <dialog class="chart-dlg" id="chart-dlg" aria-labelledby="chart-title">
   <div class="chart-head"><div><div class="kicker" id="chart-sub"></div><h3 id="chart-title"></h3></div>
