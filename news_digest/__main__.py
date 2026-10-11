@@ -509,7 +509,8 @@ def jinja_env() -> Environment:
                       autoescape=select_autoescape(["html", "j2"]))
     env.filters.update(md=_markdown, spark=_sparkline, price=_price, pct=_pct, updown=_updown,
                        bp=_bp, shortdate=_shortdate, lead=_lead, rateval=_rateval,
-                       agenda=_agenda, curve=_curve_svg, quiet=_quiet)
+                       agenda=_agenda, curve=_curve_svg, quiet=_quiet,
+                       wx_icon=lambda w: Markup(weather.icon_svg(w)))
     env.globals["tile_slug"] = tile_slug
     env.tests["quiet"] = _quiet  # for select("quiet") in templates
     return env

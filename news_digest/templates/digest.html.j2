@@ -292,6 +292,9 @@
   /* Weather */
   .ess-btn { font: inherit; text-align: left; cursor: pointer; }
   .ess-btn:active { background: var(--panel); }
+  .ess-top { display: flex; align-items: center; gap: 8px; }
+  .wx-icon { width: 30px; height: 30px; flex: none; color: var(--ink-2); }
+  .wx-icon.wxi-sun { color: #d08a12; }  /* a touch of warmth for sun; other weather uses the text colour */
   .ess-more { margin-top: 2px; font: 700 .7rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--claret); }
   dialog.wx-dlg { max-height: calc(100dvh - 24px); overflow: auto; }
   .wx-now { display: flex; align-items: center; gap: 14px; margin: 10px 0 4px; }
@@ -430,7 +433,7 @@
     {% if d.weather or mad %}
     <div class="essentials">
       {% if d.weather %}{% set w = d.weather %}<button type="button" class="ess ess-btn" id="wx-open" data-lat="{{ location.lat }}" data-lon="{{ location.lon }}" data-place="{{ w.place }}">
-        <span class="ess-big">{{ w.max }}°</span>
+        <span class="ess-top">{{ w | wx_icon }}<span class="ess-big">{{ w.max }}°</span></span>
         <span>{{ w.place }} · {{ w.text }} · low {{ w.min }}°{% if w.rain is not none %} · rain {{ w.rain }}%{% endif %} · wind {{ w.wind }} km/h</span>
         <span class="ess-more">Forecast ›</span></button>{% endif %}
       {% if mad %}{% set q = mad[0] %}<a class="ess" href="#world" data-tab="world" data-focus="{{ tile_slug('world', q) }}"><span class="ess-big num">{{ "%.2f" | format(q.price) }}</span>
