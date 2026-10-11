@@ -717,8 +717,8 @@
     </div></div>
   <div class="set-row"><span class="set-label">Open on</span>
     <div class="seg" role="radiogroup" aria-label="Open on">
-      <label><input type="radio" name="set-start" value="last"><span>Last tab</span></label>
       <label><input type="radio" name="set-start" value="today"><span>Today</span></label>
+      <label><input type="radio" name="set-start" value="last"><span>Last tab</span></label>
     </div></div>
   <label class="set-toggle"><span>Scrolling price ticker</span><input type="checkbox" id="set-ticker"></label>
   <label class="set-toggle"><span>"For you": move stories like the ones I open to the top</span><input type="checkbox" id="set-foryou"></label>
@@ -992,8 +992,21 @@
 
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch (e) {}
-    if (settings.start === "today" || hidden.includes(saved)) saved = null;
+    // Opening the app starts on Today unless Settings says "Last tab" (setting `open`;
+    // the older `start` key defaulted to the last tab and is ignored on purpose).
+    if (settings.open !== "last" || hidden.includes(saved)) saved = null;
     show(location.hash.slice(1) || saved || "today", { save: false });
+
+    // Phones keep the app paused in memory, so "opening" it is often a resume:
+    // after 15 minutes away, start again on Today at the top.
+    let leftAt = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { leftAt = Date.now(); return; }
+      if (settings.open === "last" || !leftAt || Date.now() - leftAt < 15 * 60e3) return;
+      document.querySelectorAll("dialog[open]").forEach(d => d.close());
+      show("today", { save: false });
+      window.scrollTo({ top: 0 });
+    });
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
     // Ticker: scroll slowly from right to left in a loop. It pauses while touched,

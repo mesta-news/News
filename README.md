@@ -69,7 +69,7 @@ This repo is public, so two optional switches keep your brief private:
 
 The ⚙️ icon opens per-phone settings: theme (System, Light, Dark), text size,
 which tabs to show (hidden tabs also leave the Today page and the swipe order),
-open on the last tab or Today, the scrolling ticker, and the "For you" ranking.
+open on Today (default; also after 15 minutes in the background) or the last tab, the scrolling ticker, and the "For you" ranking.
 They are stored on the phone and applied before the page is drawn.
 
 ## Notifications
