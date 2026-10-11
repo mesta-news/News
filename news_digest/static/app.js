@@ -363,6 +363,10 @@
     $("r-kp-box").hidden = !(a.kp || []).length;
     $("r-ctx").textContent = a.ctx || "";
     $("r-ctx-box").hidden = !a.ctx;
+    $("r-nums").innerHTML = (a.num || []).map(n => `<div class="r-num"><b>${esc(n.value)}</b><span>${esc(n.label)}</span></div>`).join("");
+    $("r-num-box").hidden = !(a.num || []).length;
+    $("r-nx").textContent = a.nx || "";
+    $("r-nx-box").hidden = !a.nx;
     $("r-also").textContent = (a.also || []).length ? `Also reported by ${a.also.join(", ")}` : "";
     $("r-also").hidden = !(a.also || []).length;
     showCharts(`${a.t} ${a.sum || ""} ${(a.kp || []).join(" ")}`, a.t);
@@ -442,7 +446,7 @@
       img.onerror = () => { if (token === imgToken) img.hidden = true; };
       img.src = ART[photoId].img;
     }
-    $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-also").hidden = $("r-nosum").hidden = true;
+    $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-num-box").hidden = $("r-nx-box").hidden = $("r-also").hidden = $("r-nosum").hidden = true;
     $("r-sum").textContent = body;
     $("r-sum-box").hidden = !body;
     $("r-note-box").hidden = true;
@@ -574,9 +578,19 @@
   });
   document.addEventListener("brief:tab", stopSpeaking);
 
-  // Calendar: subscribe (webcal) so new dates arrive by themselves.
-  const cal = $("cal-link");
-  if (cal) cal.href = new URL("calendar.ics", location.href).href.replace(/^https?:/, "webcal:");
+  // Calendar: Android browsers ignore webcal: links, so offer each way to subscribe.
+  const calDlg = $("cal-dlg");
+  if (calDlg) {
+    const feed = new URL("calendar.ics", location.href).href, webcal = feed.replace(/^https?:/, "webcal:");
+    $("cal-google").href = "https://calendar.google.com/calendar/render?cid=" + encodeURIComponent(webcal);
+    $("cal-apple").href = webcal;
+    $("cal-file").href = feed;
+    $("cal-link")?.addEventListener("click", () => calDlg.showModal());
+    $("cal-close")?.addEventListener("click", () => calDlg.close());
+    calDlg.addEventListener("click", e => { if (e.target === calDlg) calDlg.close(); });
+    // Put the likely choice for this phone first.
+    if (/iPhone|iPad|Macintosh/.test(navigator.userAgent)) $("cal-apple").parentNode.prepend($("cal-apple"));
+  }
 
   // ------------------------------------------------------------------ read state
   // Stories opened on this phone are dimmed; tab counters show unread new stories.
