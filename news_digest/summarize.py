@@ -44,8 +44,13 @@ SECTION_SCHEMA = {
                 "type": "object",
                 "properties": {"id": {"type": "string"}, "summary": {"type": "string"},
                                "key_points": {"type": "array", "items": {"type": "string"}},
-                               "context": {"type": "string"}},
-                "required": ["id", "summary", "key_points", "context"],
+                               "context": {"type": "string"},
+                               "numbers": {"type": "array", "items": {
+                                   "type": "object",
+                                   "properties": {"value": {"type": "string"}, "label": {"type": "string"}},
+                                   "required": ["value", "label"], "additionalProperties": False}},
+                               "next": {"type": "string"}},
+                "required": ["id", "summary", "key_points", "context", "numbers", "next"],
                 "additionalProperties": False,
             },
         },
@@ -258,7 +263,7 @@ Rules:
 - "alert": set "important" to true only when something today is big enough to interrupt the reader with a phone notification ({alert_rule}). Most days it is false. "headline" is one plain sentence (max 18 words) saying what happened; empty when not important.
 - "explainer": when one development needs background to be understood, a short explainer: "title" (a question, e.g. "Why does the 10s30s slope matter?") and "text" (80-140 words, plain language, using only the provided articles and data plus well-established general knowledge, no new news facts). Empty strings when nothing needs explaining.
 - If "previous_briefing" is given, it is what this section said in the last edition: don't repeat it; say when something is a follow-up ("update:", "as expected", "reversal") and what changed.
-- "article_summaries": for every article that includes "text" (the start of the article itself), what the in-app reader shows when the article is opened. "summary": 2-4 plain sentences on what the article reports (who, what, numbers, dates). "key_points": 3-5 short bullets with the details that the summary leaves out (figures, names, quotes, next steps), taken from the text. "context": 1-3 sentences of background a non-specialist needs (what the company/agency/term is, why this matters now); general well-established knowledge is fine here, but no new news facts. Use only the text for anything the article reports; no opinions. When "text_is_description" is true the text is only the publisher's short description (the article itself was paywalled): write a 1-2 sentence summary and 1-3 key points from it, and say nothing it doesn't support. Skip articles without "text".
+- "article_summaries": for every article that includes "text" (the start of the article itself), what the in-app reader shows when the article is opened. "summary": 4-7 plain sentences on what the article reports (who, what, numbers, dates), in two short paragraphs separated by a blank line when the text supports it (the second paragraph: reactions, causes, consequences reported in the text). "key_points": 3-6 short bullets with the details that the summary leaves out (figures, names, quotes), taken from the text. "context": 2-4 sentences of background a non-specialist needs (what the company/agency/term is, how we got here, why this matters now); general well-established knowledge is fine here, but no new news facts. "numbers": 0-4 key figures from the text, each a short "value" (e.g. "€2.1bn", "4.25%", "+12%", "3,400 jobs") and a "label" of a few words saying what it is; only figures the text states, none when it has none. "next": 1-2 sentences on what happens next according to the text (a vote, a decision date, a launch, a trial readout, what to watch); empty when the text says nothing about it. Use only the text for anything the article reports; no opinions. When "text_is_description" is true the text is only the publisher's short description (the article itself was paywalled): write a 1-2 sentence summary and 1-3 key points from it, leave numbers and next empty unless it states them, and say nothing it doesn't support. Skip articles without "text".
 - "highlights": up to 6 of the most useful articles, by their id, each with a note of at most 20 words on why it matters to us.
 """
 
@@ -332,7 +337,7 @@ def _call_api(client, cfg: dict, system: str, user: str, schema: dict) -> dict |
     try:
         response = client.beta.messages.create(
             model=cfg.get("model", "claude-opus-5-5"),
-            max_tokens=16000,
+            max_tokens=32000,
             system=system,
             messages=[{"role": "user", "content": user}],
             output_config={"effort": cfg.get("effort", "medium"),

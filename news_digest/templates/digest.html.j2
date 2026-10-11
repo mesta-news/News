@@ -236,6 +236,11 @@
   .r-meta { display: flex; align-items: center; gap: 8px; }
   .fav { width: 18px; height: 18px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
   .r-kp { margin: 6px 0 0; padding-left: 20px; }
+  #r-sum { white-space: pre-line; }
+  .r-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 8px; }
+  .r-num { padding: 10px 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--card, transparent); }
+  .r-num b { display: block; font: 700 1.25rem/1.15 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .r-num span { display: block; margin-top: 3px; font: 400 .8rem/1.3 var(--sans); color: var(--muted); }
   .r-kp li { margin: 0 0 8px; font: 400 1rem/1.5 var(--serif); }
   .r-also { margin: 16px 0 0; }
   .r-nosum { margin: 16px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--panel); }
@@ -266,7 +271,8 @@
   .listen.playing { background: var(--claret); border-color: var(--claret); color: var(--paper); }
   .panel > .listen { display: block; margin: -6px 0 12px auto; }
   .speaking { background: var(--alert-soft); }
-  .cal-link { font: 700 .72rem/1 var(--sans); color: var(--claret); text-decoration: none; }
+  .cal-link { padding: 4px 0; border: 0; background: none; font: 700 .72rem/1 var(--sans); color: var(--claret); cursor: pointer; }
+  a.preset { text-decoration: none; color: inherit; }
   .curve-box { margin: 0 0 22px; padding: 12px 12px 8px; border: 1px solid var(--rule); background: var(--card); }
   .curve-box figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; align-items: baseline; }
   .curve-box .legend { font-size: .72rem; color: var(--muted); }
@@ -460,18 +466,6 @@
     </div>
     {% endif %}
 
-    {% set coming = d | agenda %}
-    {% if coming %}
-    <div class="agenda">
-      <div class="kicker-row"><div class="kicker" style="color:var(--claret)">Coming up</div>
-        <a class="cal-link" id="cal-link" href="calendar.ics">＋ Add to my calendar</a></div>
-      <ul>{% for e in coming %}
-        <li><span class="when num">{{ e.date.strftime("%a %-d %b") }}{% if e.time %}<br><small>{{ e.time }}</small>{% endif %}</span>
-          <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span></li>
-      {% endfor %}</ul>
-    </div>
-    {% endif %}
-
     {# Only tabs with something to report get a card; quiet ones are listed once below. #}
     {% set quiet_tabs = d.sections | select("quiet") | list %}
     <div class="cards">
@@ -497,6 +491,18 @@
     </div>
     {% if quiet_tabs %}
     <p class="meta quiet-line">Quiet today: {% for s in quiet_tabs %}<a href="#{{ s.id }}" data-tab="{{ s.id }}">{{ s.short or s.title }}</a>{{ ", " if not loop.last }}{% endfor %}.</p>
+    {% endif %}
+
+    {% set coming = d | agenda %}
+    {% if coming %}
+    <div class="agenda">
+      <div class="kicker-row"><div class="kicker" style="color:var(--claret)">Coming up</div>
+        <button type="button" class="cal-link" id="cal-link">＋ Add to my calendar</button></div>
+      <ul>{% for e in coming %}
+        <li><span class="when num">{{ e.date.strftime("%a %-d %b") }}{% if e.time %}<br><small>{{ e.time }}</small>{% endif %}</span>
+          <span class="what"><a class="cat" data-cat="{{ e.section }}" href="#{{ e.section }}" data-tab="{{ e.section }}">{{ e.label }}</a> {{ e.what }}</span></li>
+      {% endfor %}</ul>
+    </div>
     {% endif %}
   </article>
 
@@ -765,7 +771,9 @@
     <section class="r-block" id="r-sum-box"><div class="kicker" id="r-sum-k">Summary</div><p id="r-sum"></p>
       <p class="meta" id="r-sum-foot">Written by Claude from the article. Check the source for details.</p></section>
     <section class="r-block" id="r-kp-box" hidden><div class="kicker">Key points</div><ul class="r-kp" id="r-kp"></ul></section>
+    <section class="r-block" id="r-num-box" hidden><div class="kicker">By the numbers</div><div class="r-nums" id="r-nums"></div></section>
     <section class="r-block" id="r-ctx-box" hidden><div class="kicker">Background</div><p id="r-ctx"></p></section>
+    <section class="r-block" id="r-nx-box" hidden><div class="kicker">What happens next</div><p id="r-nx"></p></section>
     <section class="foryou" id="r-note-box"><div class="kicker">Why it matters</div><p id="r-note"></p></section>
     <section class="r-block" id="r-chart-box" hidden><div class="kicker">In the data</div><div class="r-charts" id="r-charts"></div></section>
     <p class="meta r-nosum" id="r-nosum" hidden>The publisher doesn't let us read this article (paywall or blocked), so there is no summary yet. Related coverage is below.</p>
@@ -778,6 +786,17 @@
   </div>
 </dialog>
 <script type="application/json" id="articles">{{ articles | tojson }}</script>
+
+<dialog class="notify" id="cal-dlg" aria-labelledby="cal-title">
+  <h3 id="cal-title">Add to my calendar</h3>
+  <p>Subscribe once and the dates from <em>Coming up</em> appear in your calendar, and new ones arrive by themselves.</p>
+  <div class="presets">
+    <a class="preset" id="cal-google" target="_blank" rel="noopener"><strong>Google Calendar</strong><span>Android, Samsung and the web. Sign in, then tap Add.</span></a>
+    <a class="preset" id="cal-apple"><strong>iPhone / Apple Calendar</strong><span>Opens the Calendar app to subscribe.</span></a>
+    <a class="preset" id="cal-file" download="daily-brief.ics"><strong>Download the dates</strong><span>A one-time copy (.ics) for any other calendar app.</span></a>
+  </div>
+  <div class="row"><button class="btn ghost" type="button" id="cal-close">Close</button></div>
+</dialog>
 
 <dialog class="chart-dlg wx-dlg" id="wx-dlg" aria-labelledby="wx-title">
   <div class="chart-head"><div><div class="kicker" id="wx-place"></div><h3 id="wx-title">Weather</h3></div>

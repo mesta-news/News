@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup
 log = logging.getLogger(__name__)
 
 TIMEOUT = 12
-TEXT_LIMIT = 2500  # characters of article text handed to Claude per article (enough for key points)
+TEXT_LIMIT = 5000  # characters of article text handed to Claude per article (enough for numbers and next steps)
 HEADERS = {
     # A normal browser user agent: many news sites refuse unknown clients.
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "

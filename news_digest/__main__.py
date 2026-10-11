@@ -184,7 +184,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
         articles.enrich(sections)  # article text for Claude's reader summaries, plus images
     top: list[str] = []
     if client:
-        with ThreadPoolExecutor(max_workers=3) as pool:
+        with ThreadPoolExecutor(max_workers=4) as pool:
             briefings = list(pool.map(
                 lambda s: summarize.section_briefing(client, cfg, s), sections))
         for sec, brief in zip(sections, briefings):
@@ -202,6 +202,8 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
                     it["summary"] = a["summary"]
                     it["key_points"] = [k for k in a.get("key_points") or [] if k.strip()][:6]
                     it["context"] = (a.get("context") or "").strip()
+                    it["numbers"] = [n for n in a.get("numbers") or [] if n.get("value", "").strip()][:4]
+                    it["next"] = (a.get("next") or "").strip()
             # Put the highlighted articles first (sort is stable, so ranking is kept).
             sec["items"].sort(key=lambda i: not i["note"])
             alert = brief.get("alert") or {}
@@ -222,7 +224,7 @@ def build(cfg: dict, state_dir: Path, use_ai: bool, data_dir: Path | None = None
         for it in sec["items"]:
             old = earlier_items.get(it["id"])
             if old and not it.get("summary"):
-                for k in ("summary", "key_points", "context", "image", "url"):
+                for k in ("summary", "key_points", "context", "numbers", "next", "image", "url"):
                     if old.get(k) and not it.get(k):
                         it[k] = old[k]
 
@@ -469,6 +471,7 @@ def _articles(d: dict) -> dict:
                 "s": (_outlets(i["sources"]) or [""])[0], "n": len(_outlets(i["sources"])),
                 "d": i["published"][:10], "sum": i.get("summary", ""), "note": i.get("note", ""),
                 "kp": i.get("key_points") or [], "ctx": i.get("context", ""),
+                "num": i.get("numbers") or [], "nx": i.get("next", ""),
                 "also": _outlets(i["sources"])[1:6],
                 "snip": i.get("snippet", "") if i.get("is_new") else "", "img": i.get("image", ""),
             }.items() if v})
