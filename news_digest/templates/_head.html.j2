@@ -59,6 +59,7 @@
       --alert: #f2c26b; --alert-soft: #2c2312;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }  /* an element marked hidden never shows, whatever its own display rule */
   html { -webkit-text-size-adjust: 100%; font-size: var(--fs, 100%); }  /* text size from Settings */
   body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.55 var(--sans);
          -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
