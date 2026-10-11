@@ -771,7 +771,7 @@
     const pick = (name, value) => sdlg.querySelectorAll(`input[name=${name}]`).forEach(r => r.checked = r.value === String(value));
     pick("set-theme", set.theme || "system");
     pick("set-size", set.size || 100);
-    pick("set-start", set.start || "last");
+    pick("set-start", set.open || "today");
     $("set-ticker").checked = set.ticker !== false;
     $("set-foryou").checked = set.foryou !== false;
     sdlg.querySelectorAll("#set-tabs input").forEach(b => b.checked = !(set.hidden || []).includes(b.value));
@@ -780,7 +780,7 @@
   function read() {
     const val = name => sdlg.querySelector(`input[name=${name}]:checked`)?.value;
     return {
-      theme: val("set-theme"), size: Number(val("set-size")) || 100, start: val("set-start"),
+      theme: val("set-theme"), size: Number(val("set-size")) || 100, open: val("set-start"),
       ticker: $("set-ticker").checked, foryou: $("set-foryou").checked,
       hidden: [...sdlg.querySelectorAll("#set-tabs input")].filter(b => !b.checked).map(b => b.value),
     };
@@ -794,7 +794,7 @@
       sdlg.close();
       const now = S(), was = JSON.parse(before || "{}");
       // Tab list, start page, ticker and ranking are set up at load time: reload if they changed.
-      if (["hidden", "start", "ticker", "foryou"].some(k => JSON.stringify(now[k]) !== JSON.stringify(was[k]))) location.reload();
+      if (["hidden", "open", "ticker", "foryou"].some(k => JSON.stringify(now[k]) !== JSON.stringify(was[k]))) location.reload();
     };
     $("settings-done").addEventListener("click", close);
     sdlg.addEventListener("cancel", e => { e.preventDefault(); close(); });
