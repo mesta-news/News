@@ -1,7 +1,7 @@
 // Offline support: always try the network first so each new edition shows up
 // right away, and fall back to the last saved copy when offline or when the
 // network is too slow to answer (e.g. a weak mobile signal).
-const CACHE = "brief-v11";
+const CACHE = "brief-v12";
 const SLOW_MS = 4000;
 const SHELL = ["./", "index.html", "archive.html", "app.js", "manifest.webmanifest",
                "icon-192.png", "apple-touch-icon.png"];

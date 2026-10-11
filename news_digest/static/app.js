@@ -411,6 +411,14 @@
     $("r-img").hidden = true;
     $("r-img").removeAttribute("src");
     $("r-illu").hidden = true;
+    // Show the real photo of one of the articles behind this point, if any has one.
+    const photoId = related(t.sec, t.text, t.refs).ids.find(id => ART[id] && ART[id].img);
+    if (photoId) {
+      const img = $("r-img"), token = imgToken;
+      img.onload = () => { if (token === imgToken) img.hidden = false; };
+      img.onerror = () => { if (token === imgToken) img.hidden = true; };
+      img.src = ART[photoId].img;
+    }
     $("r-kp-box").hidden = $("r-ctx-box").hidden = $("r-also").hidden = true;
     $("r-sum").textContent = body;
     $("r-sum-box").hidden = !body;
